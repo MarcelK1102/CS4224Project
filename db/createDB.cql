@@ -1,3 +1,6 @@
+CREATE KEYSPACE IF NOT EXISTS Warehouse WITH replication = {'class': 'SimpleStrategy', 'replication_factor' : 3};
+USE KEYSPACE;
+
 CREATE TABLE warehouse ( 
     W_ID INT PRIMARY KEY, 
     W_NAME VARCHAR, 
@@ -47,7 +50,7 @@ CREATE TABLE customer (
     C_PAYMENT_CNT INT,
     C_DELIVERY_CNT INT,
     C_DATA VARCHAR,
-    PRIMARY KEY(C_W_ID, C_D_ID, C_ID)
+    PRIMARY KEY( C_D_ID, C_W_ID, C_ID)
 );
 
 CREATE TABLE orders ( 
@@ -59,7 +62,7 @@ CREATE TABLE orders (
     O_OL_CNT DECIMAL, 
     O_ALL_LOCAL DECIMAL, 
     O_ENTRY_D TIMESTAMP,
-    PRIMARY KEY(O_W_ID, O_D_ID, O_ID)
+    PRIMARY KEY(O_D_ID, O_W_ID, O_ID)
 );
 
 
@@ -82,7 +85,7 @@ CREATE TABLE order_line (
     OL_SUPPLY_W_ID INT, 
     OL_QUANTITY DECIMAL, 
     OL_DIST_INFO VARCHAR,
-    PRIMARY KEY(OL_W_ID, OL_D_ID, OL_O_ID, OL_NUMBER)
+    PRIMARY KEY(OL_D_ID, OL_W_ID, OL_O_ID, OL_NUMBER)
 );
 
 CREATE TABLE stock (
@@ -103,5 +106,5 @@ CREATE TABLE stock (
     S_DIST_09 VARCHAR,
     S_DIST_10 VARCHAR,
     S_DATA VARCHAR,
-    PRIMARY KEY(S_W_ID, S_I_ID)
+    PRIMARY KEY(S_I_ID, S_W_ID)
 );
