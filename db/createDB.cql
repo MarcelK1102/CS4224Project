@@ -1,5 +1,5 @@
 CREATE KEYSPACE IF NOT EXISTS Warehouse WITH replication = {'class': 'SimpleStrategy', 'replication_factor' : 3};
-USE KEYSPACE;
+USE Warehouse;
 
 CREATE TABLE warehouse ( 
     W_ID INT PRIMARY KEY, 
