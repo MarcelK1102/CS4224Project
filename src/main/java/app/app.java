@@ -1,16 +1,17 @@
 package app;
 
+import java.math.BigDecimal;
+
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 
-public class app {
+public class App {
     public static void main(String args[]){
-        Connector cn = new Connector();
-        Session s = cn.connect();
-        ResultSet res = s.execute("select * from warehouse");
-        for(Row p : res.all()){
-            System.out.println(p);
-        }
+        Transaction t = new Transaction();
+        BigDecimal T = new BigDecimal(1000.0);
+        System.out.println(t.stockLevel(5, 1, T, 100));
+
+        return;
     }
 }
