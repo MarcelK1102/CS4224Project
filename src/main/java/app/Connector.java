@@ -6,7 +6,7 @@ import com.datastax.driver.core.Session;
 public class Connector {
     private Cluster cluster;
     private int port = 9042;
-    private String keysapce = "Warehouse";
+    private String keyspace = "Warehouse";
     private String clusterName = "cs4224g";
     private String contactPoints[] = {
         "192.168.48.249",
@@ -25,7 +25,9 @@ public class Connector {
     }
 
     public Session connect(){
-        return cluster.connect();
+        Session s = cluster.connect();
+        s.execute("use " + keyspace + ";");
+        return s;
     }
 
 }
