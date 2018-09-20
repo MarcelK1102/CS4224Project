@@ -18,7 +18,7 @@ public class RelatedCustomer {
     public long RelatedCustomer(int cwid, int cdid, int cid){
         Session s = cn.connect();
         // s.execute("start transaction;");
-        ResultSet O = s.execute(s.prepare("select * from Order where O_W_ID = ? and O_D_ID = ? and O_C_ID = ?").bind(cwid, cdid, cid));
+        ResultSet O = s.execute(s.prepare("select * from order where O_W_ID = ? and O_D_ID = ? and O_C_ID = ?").bind(cwid, cdid, cid));
         Iterator it = O.iterator();
         while (it.hasNext()){
             System.out.println(it.next());
