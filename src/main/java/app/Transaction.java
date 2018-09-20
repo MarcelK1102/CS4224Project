@@ -24,8 +24,10 @@ public class Transaction {
             ).all()
             .get(0)
             .getInt(0);
+
         ResultSet S = s.execute( s.prepare("select OL_I_ID from order_line where OL_D_ID = ? and OL_W_ID = ? and OL_O_ID < ? and OL_O_ID >= ? allow filtering;")
             .bind(did, wid, n, n-l));
+        
         long sum = 0;
         Iterator<Row> rows = S.iterator();
         while(rows.hasNext()){
