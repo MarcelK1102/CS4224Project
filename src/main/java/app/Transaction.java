@@ -74,23 +74,27 @@ public class Transaction {
         Wrapper w = new Wrapper(s);
         return w.findDistrict(wid, did, "D_NEXT_O_ID").getInt(0);
         // s.execute("start transaction;");
+
         // int n = s.execute(
         //     s.prepare("select D_NEXT_O_ID from district where D_W_ID = ? and D_ID = ?;")
         //     .bind(wid, did)
         //     ).all()
         //     .get(0)
         //     .getInt(0);
+
         // ResultSet S = s.execute( s.prepare("select OL_I_ID from order_line where OL_D_ID = ? and OL_W_ID = ? and OL_O_ID < ? and OL_O_ID >= ? allow filtering;")
         //     .bind(did, wid, n, n-l));
+        
         // long sum = 0;
         // Iterator<Row> rows = S.iterator();
         // while(rows.hasNext()){
         //     int sid = rows.next().getInt(0);
         //     System.out.println(sid);
         //     s.execute(s.prepare("select count(S_I_ID) from stock where S_I_ID = ? and S_QUANTITY < ? allow filtering;")
-        //         .bind(sid, t));
+        //     .bind(sid, t));
         // }
         // s.close();
-        // return sum;
+
+        return sum;
     }
 }
