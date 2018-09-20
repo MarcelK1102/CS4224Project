@@ -13,6 +13,7 @@ public class App {
         System.out.println(t.stockLevel(5, 1, T, 100));*/
 
         RelatedCustomer r = new RelatedCustomer();
+        r.RelatedCustomer(5,1,1);
 
         return;
     }
