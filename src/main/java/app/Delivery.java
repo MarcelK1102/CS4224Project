@@ -23,12 +23,17 @@ public class Delivery {
         Session s = cn.connect();
         Wrapper w = new Wrapper(s);
         for (int districtNo = 1; districtNo <= 10; districtNo++){
+            System.out.println("district: " + districtNo);
             //a)
             int N = s.execute(QueryBuilder
             .select().min("O_ID")
             .from(Connector.keyspace, "orders")
             .where(QueryBuilder.eq("O_W_ID", wid))
-            .and(QueryBuilder.eq("D_ID", districtNo))).one().getInt(0);
+            .and(QueryBuilder.eq("D_ID", districtNo))
+            .and(QueryBuilder.eq("O_CARRIER_ID", null)))
+            .one().getInt(0);
+
+            System.out.println(""+N);
 
             Row X = w.findOrder(wid, districtNo, N).orElseThrow(() -> new TransactionException("Unable to find order with id:" + N));
             int cid = X.getInt("O_C_ID");
@@ -50,11 +55,15 @@ public class Delivery {
             //d)
             int delivery_cnt = C.getInt("C_DELIVERY_CNT");
             BigDecimal c_balance = C.getDecimal("C_BALANCE");
+            System.out.println("delivercnt:" + delivery_cnt);
+            System.out.println("c_balance:" + c_balance.toString());
             BigDecimal B = s.execute(QueryBuilder.select()
             .sum("OL_AMOUNT")
             .from("order_line")
             .where(QueryBuilder.eq("OL_W_ID",wid))
             .and(QueryBuilder.eq("OL_O_ID", N))).one().getDecimal(0);
+
+            System.out.println("B:" + B.toString());
 
             s.execute(QueryBuilder.update(Connector.keyspace, "costumer")
             .with(QueryBuilder.set("C_BALANCE", c_balance.add(B)))
@@ -62,6 +71,8 @@ public class Delivery {
             .where(QueryBuilder.eq("C_W_ID", wid))
             .and(QueryBuilder.eq("C_D_ID", districtNo))
             .and(QueryBuilder.eq("C_ID", cid)));
+            
+            System.out.println("finished");
         }
     }
 }
