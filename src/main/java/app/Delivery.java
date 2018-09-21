@@ -48,6 +48,7 @@ public class Delivery {
             Row C = w.findCustomer(wid, districtNo, cid).orElseThrow(() -> new TransactionException("Unable to find customer with id:" + cid));
 
             //b)
+            System.out.println("district: " + districtNo + " :b");
             s.execute(QueryBuilder.update(Connector.keyspace, "orders")
             .with(QueryBuilder.set("O_CARRIER_ID", carrierid))
             .where(QueryBuilder.eq("O_W_ID", wid))
@@ -55,12 +56,14 @@ public class Delivery {
             .and(QueryBuilder.eq("O_ID", N)));
 
             //c)
+            System.out.println("district: " + districtNo + " :c");
             s.execute(QueryBuilder.update(Connector.keyspace, "order_line")
             .with(QueryBuilder.set("OL_DELIVERY_D", QueryBuilder.now()))
             .where(QueryBuilder.eq("OL_W_ID",wid))
             .and(QueryBuilder.eq("OL_O_ID", N)));
 
             //d)
+            System.out.println("district: " + districtNo + " :d");
             int delivery_cnt = C.getInt("C_DELIVERY_CNT");
             BigDecimal c_balance = C.getDecimal("C_BALANCE");
             System.out.println("delivercnt:" + delivery_cnt);
@@ -80,7 +83,7 @@ public class Delivery {
             .and(QueryBuilder.eq("C_D_ID", districtNo))
             .and(QueryBuilder.eq("C_ID", cid)));
             
-            System.out.println("finished");
+            System.out.println("district: " + districtNo + " finished");
         }
     }
 }
