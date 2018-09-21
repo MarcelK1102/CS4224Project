@@ -29,7 +29,7 @@ public class Delivery {
             .select().min("O_ID")
             .from(Connector.keyspace, "orders")
             .where(QueryBuilder.eq("O_W_ID", wid))
-            .and(QueryBuilder.eq("D_ID", districtNo))
+            .and(QueryBuilder.eq("O_D_ID", districtNo))
             .and(QueryBuilder.eq("O_CARRIER_ID", null)))
             .one().getInt(0);
 
