@@ -60,7 +60,7 @@ public class Wrapper {
             QueryBuilder
                 .select()
                 .all()
-                .from(Connector.keyspace, "order")
+                .from(Connector.keyspace, "orders")
                 .where(QueryBuilder.eq("O_W_ID", wid))
                 .and(QueryBuilder.eq("O_D_ID", did))
                 .and(QueryBuilder.eq("O_ID", oid))
@@ -70,7 +70,7 @@ public class Wrapper {
             return Optional.ofNullable(s.execute(
             QueryBuilder
                 .select(attr)
-                .from(Connector.keyspace, "order")
+                .from(Connector.keyspace, "orders")
                 .where(QueryBuilder.eq("O_W_ID", wid))
                 .and(QueryBuilder.eq("O_D_ID", did))
                 .and(QueryBuilder.eq("O_ID", oid))
