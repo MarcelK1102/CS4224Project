@@ -42,7 +42,6 @@ public class Delivery {
                         .orElseThrow(() -> new TransactionException("Unable to find order with id:" + N));
             } catch (TransactionException e) {
                 //skip if there is no order with id N
-                System.out.println("breaked district "+ districtNo);
                 continue;
             }
             int cid = X.getInt("O_C_ID");
@@ -57,9 +56,10 @@ public class Delivery {
             .and(QueryBuilder.eq("O_ID", N)));
 
             //c)
+            long timestamp = System.currentTimeMillis();
             System.out.println("district: " + districtNo + " :c");
             s.execute(QueryBuilder.update(Connector.keyspace, "order_line")
-            .with(QueryBuilder.set("OL_DELIVERY_D", QueryBuilder.now()))
+            .with(QueryBuilder.set("OL_DELIVERY_D", QueryBuilder.timestamp(timestamp)))
             .where(QueryBuilder.eq("OL_W_ID",wid))
             .and(QueryBuilder.eq("OL_O_ID", N)));
 
