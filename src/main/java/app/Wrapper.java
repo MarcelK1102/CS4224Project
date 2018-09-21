@@ -31,24 +31,51 @@ public class Wrapper {
     }
 
     public Optional<Row> findCustomer(int wid, int did, int cid, String ... attr){
-        return Optional.ofNullable(s.execute(
+        if (attr.length == 0){
+            return Optional.ofNullable(s.execute(
             QueryBuilder
-            .select(attr)
+            .select()
+            .all()
             .from(Connector.keyspace, "customer")
             .where(QueryBuilder.eq("C_W_ID", wid))
             .and(QueryBuilder.eq("C_D_ID", did))
             .and(QueryBuilder.eq("C_ID", cid))
         ).one());
+        }
+        else{
+            return Optional.ofNullable(s.execute(
+                QueryBuilder
+                .select(attr)
+                .from(Connector.keyspace, "customer")
+                .where(QueryBuilder.eq("C_W_ID", wid))
+                .and(QueryBuilder.eq("C_D_ID", did))
+                .and(QueryBuilder.eq("C_ID", cid))
+            ).one());
+        }
     }
 
     public Optional<Row> findOrder(int wid, int did, int oid, String ... attr){
-        return Optional.ofNullable(s.execute(
+        if (attr.length == 0){
+            return Optional.ofNullable(s.execute(
+            QueryBuilder
+                .select()
+                .all()
+                .from(Connector.keyspace, "order")
+                .where(QueryBuilder.eq("O_W_ID", wid))
+                .and(QueryBuilder.eq("O_D_ID", did))
+                .and(QueryBuilder.eq("O_ID", oid))
+        ).one());
+        }
+        else{
+            return Optional.ofNullable(s.execute(
             QueryBuilder
                 .select(attr)
                 .from(Connector.keyspace, "order")
                 .where(QueryBuilder.eq("O_W_ID", wid))
                 .and(QueryBuilder.eq("O_D_ID", did))
+                .and(QueryBuilder.eq("O_ID", oid))
         ).one());
+        }
     }
 
     public Optional<Row> findItem(int iid, String ... attr){
