@@ -19,7 +19,7 @@ public class Delivery {
         public TransactionException(String message) { super(message); }
     }
 
-    public void processDelivery(int wid, int carrierid) throws TransactionException{
+    public void processDelivery(int wid, int carrierid) throws TransactionException {
         Session s = cn.connect();
         Wrapper w = new Wrapper(s);
         for (int districtNo = 1; districtNo <= 10; districtNo++){
@@ -36,7 +36,14 @@ public class Delivery {
 
             System.out.println(N);
 
-            Row X = w.findOrder(wid, districtNo, N).orElseThrow(() -> new TransactionException("Unable to find order with id:" + N));
+            Row X;
+            try {
+                X = w.findOrder(wid, districtNo, N)
+                        .orElseThrow(() -> new TransactionException("Unable to find order with id:" + N));
+            } catch (TransactionException e) {
+                //skip if there is no order with id N
+                break;
+            }
             int cid = X.getInt("O_C_ID");
             Row C = w.findCustomer(wid, districtNo, cid).orElseThrow(() -> new TransactionException("Unable to find customer with id:" + cid));
 
