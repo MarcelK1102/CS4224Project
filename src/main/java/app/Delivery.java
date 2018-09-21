@@ -42,7 +42,8 @@ public class Delivery {
                         .orElseThrow(() -> new TransactionException("Unable to find order with id:" + N));
             } catch (TransactionException e) {
                 //skip if there is no order with id N
-                break;
+                System.out.println("breaked district "+ districtNo);
+                continue;
             }
             int cid = X.getInt("O_C_ID");
             Row C = w.findCustomer(wid, districtNo, cid).orElseThrow(() -> new TransactionException("Unable to find customer with id:" + cid));
