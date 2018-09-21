@@ -30,11 +30,11 @@ public class Delivery {
             .from(Connector.keyspace, "orders")
             .where(QueryBuilder.eq("O_W_ID", wid))
             .and(QueryBuilder.eq("O_D_ID", districtNo))
-            .and(QueryBuilder.eq("O_CARRIER_ID", null))
+            .and(QueryBuilder.eq("O_CARRIER_ID", -1))
             .allowFiltering())
             .one().getInt(0);
 
-            System.out.println(""+N);
+            System.out.println(N);
 
             Row X = w.findOrder(wid, districtNo, N).orElseThrow(() -> new TransactionException("Unable to find order with id:" + N));
             int cid = X.getInt("O_C_ID");
