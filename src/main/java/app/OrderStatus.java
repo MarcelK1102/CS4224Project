@@ -31,13 +31,13 @@ public class OrderStatus{
         
         //2.
         Row lastOrder = s.execute(QueryBuilder.select()
-        .min("O_ENTRY_ID")
+        .min("O_ENTRY_D")
         .from(Connector.keyspace, "orders")
         .where(QueryBuilder.eq("O_W_ID", c_wid))
         .and(QueryBuilder.eq("O_D_ID", c_did))).one();
 
         System.out.println("O_ID: " + lastOrder.getInt("O_ID"));
-        System.out.println("O_ENTRY_ID: " + lastOrder.getTime("O_ENTRY_ID"));
+        System.out.println("O_ENTRY_ID: " + lastOrder.getTime("O_ENTRY_D"));
         System.out.println("O_CARRIER_ID: " + lastOrder.getInt("O_CARRIER_ID"));
     }
 }
