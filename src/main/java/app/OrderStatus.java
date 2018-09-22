@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.util.Iterator;
 import java.util.List;
 
+import com.datastax.driver.core.LocalDate;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
@@ -24,8 +25,19 @@ public class OrderStatus{
         Session s = cn.connect();
         Wrapper w = new Wrapper(s);
 
+        //1.
         Row C = w.findCustomer(c_wid, c_did, cid).orElseThrow(() -> new TransactionException("Unable to find customer with id:" + cid));
         System.out.println(String.format("%s %s %s",C.getString("C_FIRST"), C.getString("C_MIDDLE"), C.getString("C_LAST")));
+        
+        //2.
+        Row lastOrder = s.execute(QueryBuilder.select()
+        .min("O_ENTRY_ID")
+        .from(Connector.keyspace, "orders")
+        .where(QueryBuilder.eq("O_W_ID", c_wid))
+        .and(QueryBuilder.eq("O_D_ID", c_did))).one();
 
+        System.out.println("O_ID: " + lastOrder.getInt("O_ID"));
+        System.out.println("O_ENTRY_ID: " + lastOrder.getTime("O_ENTRY_ID"));
+        System.out.println("O_CARRIER_ID: " + lastOrder.getInt("O_CARRIER_ID"));
     }
 }
