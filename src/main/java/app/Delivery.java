@@ -66,6 +66,7 @@ public class Delivery {
             s.execute(QueryBuilder.update(Connector.keyspace, "order_line")
             .with(QueryBuilder.set("OL_DELIVERY_D", Date.from(Instant.now())))
             .where(QueryBuilder.eq("OL_W_ID",wid))
+            .and(QueryBuilder.eq("OL_D_ID", districtNo))
             .and(QueryBuilder.eq("OL_O_ID", N)));
 
             //d)
