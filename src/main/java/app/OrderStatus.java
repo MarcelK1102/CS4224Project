@@ -68,8 +68,8 @@ public class OrderStatus{
             Row currOL = it.next();
             System.out.println("OL_I_ID: " + currOL.getInt("OL_I_ID"));
             System.out.println("OL_SUPPLY_W_ID: " + currOL.getInt("OL_SUPPLY_W_ID"));
-            System.out.println("OL_QUANTITY:"  + currOL.getInt("OL_QUANTITY"));
-            System.out.println("OL_AMOUNT:"  + currOL.getInt("OL_AMOUNT"));
+            System.out.println("OL_QUANTITY:"  + currOL.getDecimal("OL_QUANTITY"));
+            System.out.println("OL_AMOUNT:"  + currOL.getDecimal("OL_AMOUNT"));
             System.out.println("OL_DELIVERY_D:"  + currOL.getTimestamp("OL_DELIVERY_D"));
         }
 
