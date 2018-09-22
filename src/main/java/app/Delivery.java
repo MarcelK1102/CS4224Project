@@ -58,6 +58,11 @@ public class Delivery {
             //c)
             long timestamp = System.currentTimeMillis();
             System.out.println("district: " + districtNo + " :c");
+            System.out.println("time: "+ timestamp);
+            System.out.println("timestamp: "+ QueryBuilder.timestamp(timestamp).toString());
+            System.out.println("wid: "+ wid);
+            System.out.println("oloid: "+ N);
+
             s.execute(QueryBuilder.update(Connector.keyspace, "order_line")
             .with(QueryBuilder.set("OL_DELIVERY_D", QueryBuilder.timestamp(timestamp)))
             .where(QueryBuilder.eq("OL_W_ID",wid))
