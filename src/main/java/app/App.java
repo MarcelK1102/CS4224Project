@@ -16,10 +16,14 @@ public class App {
         // RelatedCustomer r = new RelatedCustomer();
         // r.RelatedCustomer(5,1,1);
 
-        System.out.println("delivery: ");
+        /*System.out.println("delivery: ");
         Delivery d = new Delivery();
         try{d.processDelivery(1, 1);} 
-        catch(app.Delivery.TransactionException te){System.out.println(te);}
+        catch(app.Delivery.TransactionException te){System.out.println(te);}*/
+
+        OrderStatus os = new OrderStatus();
+        try{os.getOrderStatus(1, 5, 1);}
+        catch(app.OrderStatus.TransactionException te){System.out.println(te);}
         return;
     }
 }
