@@ -92,7 +92,9 @@ public class Delivery {
             .sum("OL_AMOUNT")
             .from("order_line")
             .where(QueryBuilder.eq("OL_W_ID",wid))
-            .and(QueryBuilder.eq("OL_O_ID", N))).one().getDecimal(0);
+            .and(QueryBuilder.eq("OL_O_ID", N))
+            .allowFiltering())
+            .one().getDecimal(0);
 
             System.out.println("B:" + B.toString());
 
