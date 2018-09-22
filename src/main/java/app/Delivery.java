@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.sql.Date;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -26,12 +27,13 @@ public class Delivery {
         for (int districtNo = 1; districtNo <= 10; districtNo++){
             //System.out.println("district: " + districtNo);
             //a)
+            List<Integer> carriers = Arrays.asList(1,2,3,4,5,6,7,8,9,10);
             int N = s.execute(QueryBuilder
             .select().min("O_ID")
             .from(Connector.keyspace, "orders")
             .where(QueryBuilder.eq("O_W_ID", wid))
             .and(QueryBuilder.eq("O_D_ID", districtNo))
-            .and(QueryBuilder.eq("O_CARRIER_ID", -1))
+            .and(QueryBuilder.in("O_CARRIER_ID", carriers))
             .allowFiltering())
             .one().getInt(0);
 
