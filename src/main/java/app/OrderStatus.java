@@ -38,6 +38,7 @@ public class OrderStatus{
         .and(QueryBuilder.eq("O_D_ID", c_did))
         .and(QueryBuilder.eq("O_C_ID", cid))
         .allowFiltering()).one().getTimestamp(0);
+        System.out.println(lastOrderDate.toString());
 
         //get Order Row
         Row lastOrder = s.execute(QueryBuilder.select().all()
@@ -48,7 +49,7 @@ public class OrderStatus{
         .allowFiltering()).one();
 
         System.out.println("O_ID: " + lastOrder.getInt("O_ID"));
-        System.out.println("O_ENTRY_ID: " + lastOrder.getTime("O_ENTRY_D"));
+        System.out.println("O_ENTRY_ID: " + lastOrder.getTimestamp("O_ENTRY_D"));
         System.out.println("O_CARRIER_ID: " + lastOrder.getInt("O_CARRIER_ID"));
     }
 }
