@@ -30,11 +30,19 @@ public class OrderStatus{
         System.out.println(String.format("%s %s %s",C.getString("C_FIRST"), C.getString("C_MIDDLE"), C.getString("C_LAST")));
         
         //2.
-        Row lastOrder = s.execute(QueryBuilder.select()
+        LocalDate lastOrderDate = s.execute(QueryBuilder.select()
         .min("O_ENTRY_D")
         .from(Connector.keyspace, "orders")
         .where(QueryBuilder.eq("O_W_ID", c_wid))
-        .and(QueryBuilder.eq("O_D_ID", c_did))).one();
+        .and(QueryBuilder.eq("O_D_ID", c_did))).one().getDate(0);
+
+        //get Order Row
+        Row lastOrder = s.execute(QueryBuilder.select().all()
+        .from(Connector.keyspace, "orders")
+        .where(QueryBuilder.eq("O_W_ID", c_wid))
+        .and(QueryBuilder.eq("O_D_ID", c_did))
+        .and(QueryBuilder.eq("O_ENTRY_D", lastOrderDate))
+        .allowFiltering()).one();
 
         System.out.println("O_ID: " + lastOrder.getInt("O_ID"));
         System.out.println("O_ENTRY_ID: " + lastOrder.getTime("O_ENTRY_D"));
