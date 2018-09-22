@@ -33,7 +33,7 @@ public class Delivery {
             .from(Connector.keyspace, "orders")
             .where(QueryBuilder.eq("O_W_ID", wid))
             .and(QueryBuilder.eq("O_D_ID", districtNo))
-            .and(QueryBuilder.in("O_CARRIER_ID", carriers))
+            .and(QueryBuilder.eq("O_CARRIER_ID", -1))
             .allowFiltering())
             .one().getInt(0);
 
