@@ -10,7 +10,7 @@ public class App {
         Transaction t = new Transaction();
         BigDecimal T = new BigDecimal(1000.0);
         try{t.newOrder(1, 5, 10, Arrays.asList(1,2,3), Arrays.asList(1,1,1), Arrays.asList(5,6,7));} 
-        catch(TransactionException te){System.out.println(te);}*/
+        catch(TransactionException te){System.out.println(te);}
         //System.out.println(t.stockLevel(5, 1, T, 100));
 
         // RelatedCustomer r = new RelatedCustomer();
