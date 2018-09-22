@@ -98,7 +98,7 @@ public class Delivery {
 
             System.out.println("B:" + B.toString());
 
-            s.execute(QueryBuilder.update(Connector.keyspace, "costumer")
+            s.execute(QueryBuilder.update(Connector.keyspace, "customer")
             .with(QueryBuilder.set("C_BALANCE", c_balance.add(B)))
             .and(QueryBuilder.set("C_DELIVERY_CNT", delivery_cnt+1))
             .where(QueryBuilder.eq("C_W_ID", wid))
