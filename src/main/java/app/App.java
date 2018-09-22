@@ -18,11 +18,11 @@ public class App {
 
         System.out.println("delivery: ");
         try{t.processDelivery(1, 1);} 
-        catch(app.Delivery.TransactionException te){System.out.println(te);}
+        catch(TransactionException te){System.out.println(te);}
 
         System.out.println("oder Status: ");
         try{t.getOrderStatus(1, 5, 1);}
-        catch(app.OrderStatus.TransactionException te){System.out.println(te);}
+        catch(TransactionException te){System.out.println(te);}
         
         return;
     }
