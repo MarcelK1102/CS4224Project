@@ -66,7 +66,7 @@ public class OrderStatus{
         Iterator<Row> it = orderlines.iterator();
         while(it.hasNext()){
             Row currOL = it.next();
-            System.out.println("O_I_ID: " + currOL.getInt("O_I_ID"));
+            System.out.println("OL_I_ID: " + currOL.getInt("OL_I_ID"));
             System.out.println("OL_SUPPLY_W_ID: " + currOL.getInt("OL_SUPPLY_W_ID"));
             System.out.println("OL_QUANTITY:"  + currOL.getInt("OL_QUANTITY"));
             System.out.println("OL_AMOUNT:"  + currOL.getInt("OL_AMOUNT"));
