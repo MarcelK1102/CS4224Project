@@ -23,7 +23,10 @@ public class App {
         System.out.println("oder Status: ");
         try{t.getOrderStatus(1, 5, 1);}
         catch(TransactionException te){System.out.println(te);}
-        
+
+        System.out.println("mein test :" );
+        try{t.popularItem(5,1,5);}
+        catch(TransactionException te){System.out.println(te);}
         return;
     }
 }

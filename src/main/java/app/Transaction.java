@@ -271,4 +271,18 @@ public class Transaction {
             System.out.println("OL_DELIVERY_D:"  + currOL.getTimestamp("OL_DELIVERY_D"));
         }
     }
+    public void popularItem(int wid, int did, int L)throws TransactionException{
+
+        Session s = cn.connect();
+        Wrapper w = new Wrapper(s);
+        Row tmp = s.execute(QueryBuilder
+                .select().all()
+                .from(Connector.keyspace, "district")
+                .where(QueryBuilder.eq("D_W_ID", wid))
+                .and(QueryBuilder.eq("D_ID", did))
+                .allowFiltering()).one();
+        int N = tmp.getInt("D_NEXT_O_ID");
+        System.out.println("Hier:" + N);
+
+    }
 }
