@@ -295,18 +295,18 @@ public class Transaction {
         System.out.println("District:  W_ID = " + wid + " D_ID = " + did);
         System.out.println("Number of last order to be examined: " + L);
         Iterator<Row> it = tmp2.iterator();
-        int max = Integer.MIN_VALUE;
+        BigDecimal max = BigDecimal.ZERO;
         while(it.hasNext()){
             Row tmp3 = it.next();
-            int tmp4 = s.execute(QueryBuilder
+            BigDecimal tmp4 = s.execute(QueryBuilder
                     .select().max("OL_QUANTITY")
                     .from(Connector.keyspace, "order_line")
                     .where(QueryBuilder.eq("OL_D_ID",did))
                     .and(QueryBuilder.eq("OL_W_ID",wid))
                     .and(QueryBuilder.gte("OL_O_ID",tmp3.getInt("O_ID")))
 
-            ).one().getInt(0);
-            if (max < tmp4)
+            ).one().getDecimal(0);
+            if (max.compareTo(tmp4)==-1)
                 max = tmp4;
         }/*
         while(it.hasNext()) {
