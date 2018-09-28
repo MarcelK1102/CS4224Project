@@ -305,7 +305,7 @@ public class Transaction {
                     .and(QueryBuilder.eq("OL_W_ID",wid))
                     .and(QueryBuilder.gte("OL_O_ID",tmp3.getInt("O_ID")))
 
-            ).one().getInt("OL_QUANTITY");
+            ).one().getInt(0);
             if (max < tmp4)
                 max = tmp4;
         }/*
