@@ -283,6 +283,7 @@ public class Transaction {
                 .allowFiltering()).one();
         int N = tmp.getInt("D_NEXT_O_ID");
         System.out.println("Hier:" + N);
+        N = 3003;
         ResultSet tmp2 = s.execute(QueryBuilder
                 .select().all()
                 .from(Connector.keyspace, "orders")
@@ -291,6 +292,9 @@ public class Transaction {
                 .and(QueryBuilder.gte("O_ID",N-L))
                 .and(QueryBuilder.lte("O_ID",N))
         );
+        while(!tmp2.isExhausted()) {
+            System.out.println(tmp2.one().getInt("O_C_ID"));
+        }
 
     }
 }
