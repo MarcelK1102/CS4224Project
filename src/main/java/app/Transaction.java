@@ -283,6 +283,14 @@ public class Transaction {
                 .allowFiltering()).one();
         int N = tmp.getInt("D_NEXT_O_ID");
         System.out.println("Hier:" + N);
+        ResultSet tmp2 = s.execute(QueryBuilder
+                .select().all()
+                .from(Connector.keyspace, "orders")
+                .where(QueryBuilder.eq("O_D_ID",did))
+                .and(QueryBuilder.eq("O_W_ID",wid))
+                .and(QueryBuilder.gte("O_ID",N-L))
+                .and(QueryBuilder.lte("O_ID",N))
+        );
 
     }
 }
