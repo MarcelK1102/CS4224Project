@@ -292,9 +292,28 @@ public class Transaction {
                 .and(QueryBuilder.gte("O_ID",N-L))
                 .and(QueryBuilder.lte("O_ID",N))
         );
-        while(!tmp2.isExhausted()) {
-            System.out.println(tmp2.one().getInt("O_C_ID"));
-        }
+        System.out.println("District:  W_ID = " + wid + " D_ID = " + did);
+        System.out.println("Number of last order to be examined: " + L);
+        Iterator<Row> it = tmp2.iterator();
+        int max = Integer.MIN_VALUE;
+        while(it.hasNext()){
+            Row tmp3 = it.next();
+            int tmp4 = s.execute(QueryBuilder
+                    .select().max("OL_QUANTITY")
+                    .from(Connector.keyspace, "order_line")
+                    .where(QueryBuilder.eq("OL_D_ID",did))
+                    .and(QueryBuilder.eq("OL_W_ID",wid))
+                    .and(QueryBuilder.gte("OL_O_ID",tmp3.getInt("O_ID")))
+
+            ).one().getInt("OL_QUANTITY");
+            if (max < tmp4)
+                max = tmp4;
+        }/*
+        while(it.hasNext()) {
+            Row tmp3 = it.next();
+            System.out.print("Order Number: " + tmp3.getInt("O_ID") + " entry date and time: " + tmp3.getTimestamp("O_ENTRY_D"));
+        }*/
+        System.out.println("Max: " + max);
 
     }
 }
