@@ -297,6 +297,7 @@ public class Transaction {
         System.out.println("District:  W_ID = " + wid + " D_ID = " + did);
         System.out.println("Number of last order to be examined: " + L);
         Iterator<Row> it = S.iterator();
+        Iterator<Row> it2 = S.iterator();
         Set<ResultSet> P = new HashSet<>();
         while(it.hasNext()) {
             System.out.println("angekommenzuerst");
@@ -320,8 +321,8 @@ public class Transaction {
 
             ));
         }
-        it = S.iterator();
-        while(it.hasNext())
+
+        while(it2.hasNext())
             System.out.println("angekommen");
 
     }
