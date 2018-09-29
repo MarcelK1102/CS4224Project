@@ -4,8 +4,10 @@ import java.math.BigDecimal;
 import java.sql.Date;
 
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
@@ -283,8 +285,7 @@ public class Transaction {
                 .allowFiltering()).one();
         int N = tmp.getInt("D_NEXT_O_ID");
         System.out.println("Hier:" + N);
-        //N = 3003;
-        ResultSet tmp2 = s.execute(QueryBuilder
+        ResultSet S = s.execute(QueryBuilder
                 .select().all()
                 .from(Connector.keyspace, "orders")
                 .where(QueryBuilder.eq("O_D_ID",did))
@@ -294,26 +295,31 @@ public class Transaction {
         );
         System.out.println("District:  W_ID = " + wid + " D_ID = " + did);
         System.out.println("Number of last order to be examined: " + L);
-        Iterator<Row> it = tmp2.iterator();
-        BigDecimal max = BigDecimal.ZERO;
-        while(it.hasNext()){
-            Row tmp3 = it.next();
-            BigDecimal tmp4 = s.execute(QueryBuilder
-                    .select().max("OL_QUANTITY")
-                    .from(Connector.keyspace, "order_line")
-                    .where(QueryBuilder.eq("OL_D_ID",did))
-                    .and(QueryBuilder.eq("OL_W_ID",wid))
-                    .and(QueryBuilder.gte("OL_O_ID",tmp3.getInt("O_ID")))
-
-            ).one().getDecimal(0);
-            if (max.compareTo(tmp4)==-1)
-                max = tmp4;
-        }/*
+        Iterator<Row> it = S.iterator();
+        Set<ResultSet> P = new HashSet<>();
         while(it.hasNext()) {
             Row tmp3 = it.next();
-            System.out.print("Order Number: " + tmp3.getInt("O_ID") + " entry date and time: " + tmp3.getTimestamp("O_ENTRY_D"));
-        }*/
-        System.out.println("Max: " + max);
+            BigDecimal max = s.execute(QueryBuilder
+                    .select().max("OL_QUANTITY")
+                    .from(Connector.keyspace, "order_line")
+                    .where(QueryBuilder.eq("OL_D_ID", did))
+                    .and(QueryBuilder.eq("OL_W_ID", wid))
+                    .and(QueryBuilder.gte("OL_O_ID", tmp3.getInt("O_ID")))
+
+            ).one().getDecimal(0);
+            P.add(s.execute(QueryBuilder
+                    .select().all()
+                    .from(Connector.keyspace, "order_line")
+                    .where(QueryBuilder.eq("OL_D_ID", did))
+                    .and(QueryBuilder.eq("OL_W_ID", wid))
+                    .and(QueryBuilder.gte("OL_O_ID", tmp3.getInt("O_ID")))
+                    .and(QueryBuilder.eq("OL_QUANTITY", max))
+
+            ));
+        }
+        it = S.iterator();
+        while(it.hasNext())
+            System.out.println("angekommen");
 
     }
 }
