@@ -4,10 +4,7 @@ import java.math.BigDecimal;
 import java.sql.Date;
 
 import java.time.Instant;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
@@ -294,14 +291,22 @@ public class Transaction {
                 .and(QueryBuilder.lte("O_ID",N))
                 .allowFiltering()
         );
+
         System.out.println("District:  W_ID = " + wid + " D_ID = " + did);
         System.out.println("Number of last order to be examined: " + L);
         Iterator<Row> it = S.iterator();
-        Iterator<Row> it2 = S.iterator();
-        Set<ResultSet> P = new HashSet<>();
+
+        //Iterator<Row> it2 = S.iterator();
+        ArrayList<popularItem> items = new ArrayList<>();
+        HashMap<Row,ResultSet> P = new HashMap<>();
         while(it.hasNext()) {
             System.out.println("angekommenzuerst");
             Row tmp3 = it.next();
+
+            int O_ID = tmp3.getInt("O_ID");
+            String CName = "" + tmp3.getInt("O_C_ID");
+            String timeEntry = tmp3.getTimestamp("O_ENTRY_D").toString();
+
             BigDecimal max = s.execute(QueryBuilder
                     .select().max("OL_QUANTITY")
                     .from(Connector.keyspace, "order_line")
@@ -310,7 +315,8 @@ public class Transaction {
                     .and(QueryBuilder.gte("OL_O_ID", tmp3.getInt("O_ID")))
                     .allowFiltering()
             ).one().getDecimal(0);
-            P.add(s.execute(QueryBuilder
+
+            P.put(tmp3,s.execute(QueryBuilder
                     .select().all()
                     .from(Connector.keyspace, "order_line")
                     .where(QueryBuilder.eq("OL_D_ID", did))
@@ -320,10 +326,12 @@ public class Transaction {
                     .allowFiltering()
 
             ));
+            items.add(new popularItem(O_ID,timeEntry,CName,null));
+        }
+        for(popularItem p : items){
+            System.out.println("Order Number:" + p.O_ID + " Date: " + p.O_ENTRY_D + " Customer: " + p.CName);
         }
 
-        while(it2.hasNext())
-            System.out.println("angekommen");
 
     }
 }
