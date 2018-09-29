@@ -292,6 +292,7 @@ public class Transaction {
                 .and(QueryBuilder.eq("O_W_ID",wid))
                 .and(QueryBuilder.gte("O_ID",N-L))
                 .and(QueryBuilder.lte("O_ID",N))
+                .allowFiltering()
         );
         System.out.println("District:  W_ID = " + wid + " D_ID = " + did);
         System.out.println("Number of last order to be examined: " + L);
@@ -305,7 +306,7 @@ public class Transaction {
                     .where(QueryBuilder.eq("OL_D_ID", did))
                     .and(QueryBuilder.eq("OL_W_ID", wid))
                     .and(QueryBuilder.gte("OL_O_ID", tmp3.getInt("O_ID")))
-
+                    .allowFiltering()
             ).one().getDecimal(0);
             P.add(s.execute(QueryBuilder
                     .select().all()
@@ -314,6 +315,7 @@ public class Transaction {
                     .and(QueryBuilder.eq("OL_W_ID", wid))
                     .and(QueryBuilder.gte("OL_O_ID", tmp3.getInt("O_ID")))
                     .and(QueryBuilder.eq("OL_QUANTITY", max))
+                    .allowFiltering()
 
             ));
         }
