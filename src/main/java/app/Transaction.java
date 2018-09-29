@@ -299,6 +299,7 @@ public class Transaction {
         Iterator<Row> it = S.iterator();
         Set<ResultSet> P = new HashSet<>();
         while(it.hasNext()) {
+            System.out.println("angekommenzuerst");
             Row tmp3 = it.next();
             BigDecimal max = s.execute(QueryBuilder
                     .select().max("OL_QUANTITY")
