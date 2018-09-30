@@ -380,6 +380,8 @@ public class Transaction {
             ).one().getDecimal(0);
             order p = new order(O_ID,timeEntry,CName,null);
             System.out.println("Hier fehler " + max);
+            if(max == null)
+                max = BigDecimal.valueOf(0);
             ResultSet popItems = s.execute(QueryBuilder
                     .select().all()
                     .from(Connector.keyspace, "order_line")
