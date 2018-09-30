@@ -395,6 +395,7 @@ public class Transaction {
             popularItems.put(p.O_ID,item);
             orders.add(p);
         }
+        //berechnung andern, namen von item und customer holenSSSS
         for(order o : orders ){
             System.out.println("Order ID: " + o.O_ID + " Date " + o.O_ENTRY_D);
             System.out.println("CName: " + o.CName);
