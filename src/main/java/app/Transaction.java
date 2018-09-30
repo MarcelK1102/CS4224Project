@@ -351,21 +351,15 @@ public class Transaction {
 
         System.out.println("District:  W_ID = " + wid + " D_ID = " + did);
         System.out.println("Number of last order to be examined: " + L);
+
         Iterator<Row> it = S.iterator();
-
-        //Iterator<Row> it2 = S.iterator();
-
         ArrayList<order> orders = new ArrayList<>();
-
         //orderNumber -> popularItems
         HashMap<Integer,HashSet<Integer>> popularItems = new HashMap<>();
-
         //itemID -> Quantity
-
         HashMap<Integer,BigDecimal> popItemQuantity = new HashMap<>();
         while(it.hasNext()) {
             Row tmp3 = it.next();
-
             int O_ID = tmp3.getInt("O_ID");
             String CName = "" + tmp3.getInt("O_C_ID");
             String timeEntry = tmp3.getTimestamp("O_ENTRY_D").toString();
@@ -379,7 +373,6 @@ public class Transaction {
                     .allowFiltering()
             ).one().getDecimal(0);
             order p = new order(O_ID,timeEntry,CName,null);
-            System.out.println("Hier fehler " + max);
             if(max == null)
                 max = BigDecimal.valueOf(0);
             ResultSet popItems = s.execute(QueryBuilder
@@ -400,7 +393,6 @@ public class Transaction {
             }
             //get just popular items
             popularItems.put(p.O_ID,item);
-
             orders.add(p);
         }
         for(order o : orders ){
@@ -408,7 +400,15 @@ public class Transaction {
             System.out.println("CName: " + o.CName);
             for(Integer i : popularItems.get(o.O_ID)){
                 System.out.println("Popular Item: " + i + " Quantity: " + popItemQuantity.get(i));
+                int counter = 0;
+                for(order t : orders){
+                    if(popularItems.get(t.O_ID).contains(i))
+                        counter++;
+                }
+                System.out.println(100*(float)counter / (float)orders.size());
+
             }
+
         }
     }
 }
