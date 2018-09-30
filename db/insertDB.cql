@@ -9,7 +9,7 @@ COPY warehouse (
     W_STATE, 
     W_ZIP,
     W_TAX,
-    W_YTS
+    W_YTD
 ) FROM 'warehouse.csv';
 
 COPY district ( 
