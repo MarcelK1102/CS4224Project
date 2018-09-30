@@ -10,7 +10,7 @@ CREATE TABLE warehouse (
     W_STATE VARCHAR, 
     W_ZIP VARCHAR,
     W_TAX DECIMAL,
-    W_YTS DECIMAL
+    W_YTD DECIMAL
 );
 
 CREATE TABLE district ( 
