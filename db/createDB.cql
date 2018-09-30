@@ -85,7 +85,7 @@ CREATE TABLE order_line (
     OL_SUPPLY_W_ID INT, 
     OL_QUANTITY DECIMAL, 
     OL_DIST_INFO VARCHAR,
-    PRIMARY KEY(OL_D_ID, OL_W_ID, OL_O_ID, OL_NUMBER)
+    PRIMARY KEY((OL_D_ID, OL_W_ID), OL_I_ID, OL_O_ID, OL_NUMBER)
 );
 
 CREATE TABLE stock (
@@ -106,7 +106,7 @@ CREATE TABLE stock (
     S_DIST_09 VARCHAR,
     S_DIST_10 VARCHAR,
     S_DATA VARCHAR,
-    PRIMARY KEY(S_I_ID, S_W_ID)
+    PRIMARY KEY((S_I_ID, S_W_ID), S_QUANTITY)
 );
 
 create materialized view customer_by_balance

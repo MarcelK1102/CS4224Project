@@ -1,15 +1,20 @@
 package app;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Date;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.querybuilder.Batch;
+import com.datastax.driver.core.querybuilder.Clause;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
+import com.google.common.collect.Lists;
 
 public class Transaction {
 
@@ -107,33 +112,35 @@ public class Transaction {
     }
 
     //Transaction 5
-    public long stockLevel(int wid, int did, BigDecimal t, int l){
+    public long stockLevel(int wid, int did, BigDecimal t, int l) throws TransactionException{
         Session s = cn.connect();
-        Wrapper w = new Wrapper(s);
-        // w.findDistrict(wid, did, "D_NEXT_O_ID").getInt(0);
-        // s.execute("start transaction;");
+        try{
+            Wrapper w = new Wrapper(s);
+            //Step 1
+            int N = w.findDistrict(wid, did, "D_NEXT_O_ID")
+                .orElseThrow(() -> new TransactionException(String.format("Unable to find district with W_ID = %d and D_ID = %d", wid, did)))
+                .getInt(0);
 
-        // int n = s.execute(
-        //     s.prepare("select D_NEXT_O_ID from district where D_W_ID = ? and D_ID = ?;")
-        //     .bind(wid, did)
-        //     ).all()
-        //     .get(0)
-        //     .getInt(0);
+            //Step 2
+            List<Integer> itemids = Lists.transform(s.execute(QueryBuilder
+                    .select("OL_I_ID")
+                    .from("order_line")
+                    .where(QueryBuilder.eq("OL_W_ID", wid))
+                    .and(QueryBuilder.eq("OL_D_ID", did))
+                    .and(QueryBuilder.gte("OL_O_ID", N-l))
+                ).all(), r -> r.getInt(0));
 
-        // ResultSet S = s.execute( s.prepare("select OL_I_ID from order_line where OL_D_ID = ? and OL_W_ID = ? and OL_O_ID < ? and OL_O_ID >= ? allow filtering;")
-        //     .bind(did, wid, n, n-l));
-        
-        long sum = 0;
-        // Iterator<Row> rows = S.iterator();
-        // while(rows.hasNext()){
-        //     int sid = rows.next().getInt(0);
-        //     System.out.println(sid);
-        //     s.execute(s.prepare("select count(S_I_ID) from stock where S_I_ID = ? and S_QUANTITY < ? allow filtering;")
-        //     .bind(sid, t));
-        // }
-        // s.close();
-
-        return sum;
+            //Step 3
+            return s.execute(QueryBuilder
+                .select(QueryBuilder.count("S_I_ID"))
+                .from("stock")
+                .where(QueryBuilder.eq("S_W_ID", wid))
+                .and(QueryBuilder.in("S_I_ID", itemids))
+                .and(QueryBuilder.lt("S_QUANTITY", t))
+            ).one().getLong(0);
+        }finally{
+            s.close();
+        }
     }
 
     //Transaction 7
