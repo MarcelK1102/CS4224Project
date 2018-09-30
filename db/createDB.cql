@@ -50,7 +50,7 @@ CREATE TABLE customer (
     C_PAYMENT_CNT INT,
     C_DELIVERY_CNT INT,
     C_DATA VARCHAR,
-    PRIMARY KEY( C_D_ID, C_W_ID, C_ID)
+    PRIMARY KEY( (C_D_ID), C_W_ID, C_ID)
 );
 
 CREATE TABLE orders ( 
@@ -85,7 +85,7 @@ CREATE TABLE order_line (
     OL_SUPPLY_W_ID INT, 
     OL_QUANTITY DECIMAL, 
     OL_DIST_INFO VARCHAR,
-    PRIMARY KEY(OL_D_ID, OL_W_ID, OL_O_ID, OL_NUMBER)
+    PRIMARY KEY((OL_D_ID, OL_W_ID), OL_I_ID, OL_O_ID, OL_NUMBER)
 );
 
 CREATE TABLE stock (
@@ -106,5 +106,15 @@ CREATE TABLE stock (
     S_DIST_09 VARCHAR,
     S_DIST_10 VARCHAR,
     S_DATA VARCHAR,
-    PRIMARY KEY(S_I_ID, S_W_ID)
+    PRIMARY KEY((S_I_ID, S_W_ID), S_QUANTITY)
 );
+
+create materialized view customer_by_balance
+as select C_BALANCE, C_ID, C_W_ID, C_D_ID
+from customer
+where C_BALANCE is not null
+and C_ID is not null
+and C_W_ID is not null
+and C_D_ID is not null
+primary key ((C_D_ID), C_BALANCE, C_ID, C_W_ID)
+with clustering order by (C_BALANCE DESC);
