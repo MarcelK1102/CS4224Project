@@ -8,11 +8,12 @@ import app.Transaction.TransactionException;
 public class App {
     public static void main(String args[]){
         Transaction t = new Transaction();
-        BigDecimal T = new BigDecimal(50.0);
+        // BigDecimal T = new BigDecimal(50.0);
         // try{t.newOrder(1, 5, 10, Arrays.asList(1,2,3), Arrays.asList(1,1,1), Arrays.asList(5,6,7));} 
         // catch(TransactionException te){System.out.println(te);}
-        try{System.out.println(t.stockLevel(5, 1, T, 1000));}
-        catch(TransactionException te){System.out.println(te);}
+        // try{System.out.println(t.stockLevel(5, 1, T, 1000));}
+        // catch(TransactionException te){System.out.println(te);}
+        t.topBalance();
 
         // RelatedCustomer r = new RelatedCustomer();
         // r.RelatedCustomer(5,1,1);

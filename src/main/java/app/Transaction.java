@@ -7,6 +7,7 @@ import java.sql.Date;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
@@ -14,7 +15,6 @@ import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.Batch;
 import com.datastax.driver.core.querybuilder.Clause;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
-import com.google.common.collect.Lists;
 
 public class Transaction {
 
@@ -122,13 +122,14 @@ public class Transaction {
                 .getInt(0);
 
             //Step 2
-            List<Integer> itemids = Lists.transform(s.execute(QueryBuilder
+            List<Integer> itemids = s.execute(QueryBuilder
                     .select("OL_I_ID")
                     .from("order_line")
                     .where(QueryBuilder.eq("OL_W_ID", wid))
                     .and(QueryBuilder.eq("OL_D_ID", did))
-                    .and(QueryBuilder.gte("OL_O_ID", N-l))
-                ).all(), r -> r.getInt(0));
+                    .and(QueryBuilder.gt("OL_O_ID", N-l))
+                    .and(QueryBuilder.lte("OL_O_ID", N))
+                ).all().stream().mapToInt(r -> r.getInt(0)).boxed().collect(Collectors.toList());
 
             //Step 3
             return s.execute(QueryBuilder
@@ -144,15 +145,45 @@ public class Transaction {
     }
 
     //Transaction 7
-    // public void topBalance(){
-    //     Session s = cn.connect();
-    //     //step 1
-    //     ResultSet rs = s.execute(QueryBuilder.select()
-    //         .from("customer_by_balance")
-    //         .orderBy(QueryBuilder.desc("C_BALANCE"))
-    //         .limit(10)
-    //     );
+    public void topBalance(){
+        Session s = cn.connect();
+        Wrapper w = new Wrapper(s);
+        List<Row> rows = new ArrayList<>(100);
+        //processing: step 1
+        IntStream.rangeClosed(1, 10).forEach(i -> {
+            rows.addAll(
+                s.execute(QueryBuilder
+                    .select()
+                    .from("customer_by_balance")
+                    .where(QueryBuilder.eq("C_D_ID", i))
+                    .limit(10)
+                ).all()
+            );
+        });
 
+        //Output: step 1
+        rows.stream()
+            .sorted((r1, r2) -> r2.getDecimal("C_BALANCE").compareTo(r1.getDecimal("C_BALANCE")))
+            .limit(10)
+            .forEach(r ->{
+                //a
+                w.findCustomer(r.getInt("C_W_ID"), r.getInt("C_D_ID"), r.getInt("C_ID"), "C_FIRST", "C_MIDDLE", "C_LAST")
+                    .ifPresent(c -> System.out.printf("Name: %s %s %s, ", c.getString(0), c.getString(1), c.getString(2)));
+
+                //b
+                System.out.printf("Balance: %s, ", r.getDecimal("C_BALANCE"));
+
+                //c
+                w.findWarehouse(r.getInt("C_W_ID"), "W_NAME").ifPresent(c -> System.out.printf("Warehouse name: %s, ", c.getString(0)));
+
+                //d
+                w.findDistrict(r.getInt("C_W_ID"), r.getInt("C_D_ID"), "D_NAME").ifPresent(c -> System.out.printf("District name: %s\n",  c.getString(0)));
+
+            });
+
+    }
+
+    //transaction 3
     public void processDelivery(int wid, int carrierid) throws TransactionException {
         Session s = cn.connect();
         Wrapper w = new Wrapper(s);
@@ -242,6 +273,7 @@ public class Transaction {
         }
     }
 
+    //Transaction 2.4
     public void getOrderStatus(int c_wid, int c_did, int cid) throws TransactionException {
         Session s = cn.connect();
         Wrapper w = new Wrapper(s);
@@ -293,6 +325,8 @@ public class Transaction {
             System.out.println("OL_DELIVERY_D:"  + currOL.getTimestamp("OL_DELIVERY_D"));
         }
     }
+
+    //Transaction 6
     public void popularItem(int wid, int did, int L)throws TransactionException{
 
         Session s = cn.connect();

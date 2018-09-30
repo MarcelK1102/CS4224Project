@@ -17,7 +17,7 @@ public class Wrapper {
             QueryBuilder
                 .select(attr)
                 .from("warehouse")
-                .where(QueryBuilder.eq("S_W_ID", wid)))
+                .where(QueryBuilder.eq("W_ID", wid)))
             .one());
     }
     public Optional<Row> findDistrict(int wid, int did, String ... attr){

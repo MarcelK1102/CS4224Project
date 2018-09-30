@@ -50,7 +50,7 @@ CREATE TABLE customer (
     C_PAYMENT_CNT INT,
     C_DELIVERY_CNT INT,
     C_DATA VARCHAR,
-    PRIMARY KEY( C_D_ID, C_W_ID, C_ID)
+    PRIMARY KEY( (C_D_ID), C_W_ID, C_ID)
 );
 
 CREATE TABLE orders ( 
@@ -117,4 +117,4 @@ and C_ID is not null
 and C_W_ID is not null
 and C_D_ID is not null
 primary key ((C_D_ID), C_BALANCE, C_ID, C_W_ID)
-with clustering order by (C_BALANCE desc);  
+with clustering order by (C_BALANCE DESC);
