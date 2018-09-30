@@ -13,7 +13,7 @@ public class App {
         // catch(TransactionException te){System.out.println(te);}
         // try{System.out.println(t.stockLevel(5, 1, T, 1000));}
         // catch(TransactionException te){System.out.println(te);}
-        t.topBalance();
+        //t.topBalance();
 
         // RelatedCustomer r = new RelatedCustomer();
         // r.RelatedCustomer(5,1,1);
@@ -26,9 +26,9 @@ public class App {
         // try{t.getOrderStatus(1, 5, 1);}
         // catch(TransactionException te){System.out.println(te);}
 
-        // System.out.println("mein test :" );
-        // try{t.popularItem(5,1,5);}
-        // catch(TransactionException te){System.out.println(te);}
-        // return;
+         System.out.println("mein test :" );
+         try{t.popularItem(5,1,5);}
+         catch(TransactionException te){System.out.println(te);}
+         return;
     }
 }

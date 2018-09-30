@@ -354,16 +354,22 @@ public class Transaction {
         Iterator<Row> it = S.iterator();
 
         //Iterator<Row> it2 = S.iterator();
-        ArrayList<popularItem> items = new ArrayList<>();
-        HashMap<Row,ResultSet> P = new HashMap<>();
+
+        ArrayList<order> orders = new ArrayList<>();
+
+        //orderNumber -> popularItems
+        HashMap<Integer,HashSet<Integer>> popularItems = new HashMap<>();
+
+        //itemID -> Quantity
+
+        HashMap<Integer,Integer> popItemQuantity = new HashMap<>();
         while(it.hasNext()) {
-            System.out.println("angekommenzuerst");
             Row tmp3 = it.next();
 
             int O_ID = tmp3.getInt("O_ID");
             String CName = "" + tmp3.getInt("O_C_ID");
             String timeEntry = tmp3.getTimestamp("O_ENTRY_D").toString();
-
+            //get max popularity
             BigDecimal max = s.execute(QueryBuilder
                     .select().max("OL_QUANTITY")
                     .from(Connector.keyspace, "order_line")
@@ -372,8 +378,8 @@ public class Transaction {
                     .and(QueryBuilder.gte("OL_O_ID", tmp3.getInt("O_ID")))
                     .allowFiltering()
             ).one().getDecimal(0);
-
-            P.put(tmp3,s.execute(QueryBuilder
+            order p = new order(O_ID,timeEntry,CName,null);
+            ResultSet popItems = s.execute(QueryBuilder
                     .select().all()
                     .from(Connector.keyspace, "order_line")
                     .where(QueryBuilder.eq("OL_D_ID", did))
@@ -381,13 +387,25 @@ public class Transaction {
                     .and(QueryBuilder.gte("OL_O_ID", tmp3.getInt("O_ID")))
                     .and(QueryBuilder.eq("OL_QUANTITY", max))
                     .allowFiltering()
+            );
+            Iterator<Row> it2 = popItems.iterator();
+            HashSet<Integer> item = new HashSet<>();
+            while(it2.hasNext()){
+                Row popItem = it2.next();
+                item.add(popItem.getInt("OL_I_ID"));
+                popItemQuantity.put(popItem.getInt("OL_I_ID"),popItem.getInt("OL_QUANTITY"));
+            }
+            //get just popular items
+            popularItems.put(p.O_ID,item);
 
-            ));
-            items.add(new popularItem(O_ID,timeEntry,CName,null));
+            orders.add(p);
         }
-        for(popularItem p : items){
-            System.out.println("Order Number:" + p.O_ID + " Date: " + p.O_ENTRY_D + " Customer: " + p.CName);
+        for(order o : orders ){
+            System.out.println("Order ID: " + o.O_ID + " Date " + o.O_ENTRY_D);
+            System.out.println("CName: " + o.CName);
+            for(Integer i : popularItems.get(o.O_ID)){
+                System.out.println("Popular Item: " + i + " Quantity: " + popItemQuantity.get(i));
+            }
         }
-
     }
 }
