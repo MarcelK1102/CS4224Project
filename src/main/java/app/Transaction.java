@@ -362,7 +362,7 @@ public class Transaction {
 
         //itemID -> Quantity
 
-        HashMap<Integer,Integer> popItemQuantity = new HashMap<>();
+        HashMap<Integer,BigDecimal> popItemQuantity = new HashMap<>();
         while(it.hasNext()) {
             Row tmp3 = it.next();
 
@@ -396,7 +396,7 @@ public class Transaction {
             while(it2.hasNext()){
                 Row popItem = it2.next();
                 item.add(popItem.getInt("OL_I_ID"));
-                popItemQuantity.put(popItem.getInt("OL_I_ID"),popItem.getInt("OL_QUANTITY"));
+                popItemQuantity.put(popItem.getInt("OL_I_ID"),popItem.getDecimal("OL_QUANTITY"));
             }
             //get just popular items
             popularItems.put(p.O_ID,item);
