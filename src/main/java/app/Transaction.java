@@ -379,6 +379,7 @@ public class Transaction {
                     .allowFiltering()
             ).one().getDecimal(0);
             order p = new order(O_ID,timeEntry,CName,null);
+            System.out.println("Hier fehler " + max);
             ResultSet popItems = s.execute(QueryBuilder
                     .select().all()
                     .from(Connector.keyspace, "order_line")
