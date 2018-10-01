@@ -324,7 +324,7 @@ public class Transaction {
     //Transaction 2
     public static void paymentTransaction(int cwid, int cdid, int cid, BigDecimal payment){
         s.execute(QueryBuilder.update(Connector.keyspace, "warehouse")
-                .with(QueryBuilder.add("W_YTD", payment))
+                .with(QueryBuilder.set("W_YTD", payment))
                 .where(QueryBuilder.eq("W_ID", cwid))
         );
         s.execute(QueryBuilder.update(Connector.keyspace, "district")
