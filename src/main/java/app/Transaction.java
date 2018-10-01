@@ -428,7 +428,7 @@ public class Transaction {
                 Row Item = it2.next();
                 items.add(Item.getInt("OL_I_ID"));
                 popItemQuantity.put(Item.getInt("OL_I_ID"),Item.getDecimal("OL_QUANTITY"));
-                System.out.println(Item.getDecimal("OL_QUANTITY"));
+                System.out.println(Item.getDecimal("OL_QUANTITY") + " " + max);
                 if(Item.getDecimal("OL_QUANTITY").equals(max))
                     popItems.add(Item.getInt("OL_O_ID"));
             }
