@@ -409,8 +409,10 @@ public class Transaction {
                     .and(QueryBuilder.eq("OL_O_ID", O_ID))
                     .allowFiltering()
             ).one().getDecimal(0);
-            if(max == null)
+            if(max == null) {
                 max = BigDecimal.valueOf(0);
+                continue;
+            }
             ResultSet Items = s.execute(QueryBuilder
                     .select().all()
                     .from(Connector.keyspace, "order_line")
