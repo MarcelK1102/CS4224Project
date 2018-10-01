@@ -15,12 +15,12 @@ public class App {
         }catch (Exception e){
             System.err.println(e);
         }
-        try{
+        /*try{
             Transaction.handleInput();
             Transaction.handleOutput();
         } finally {
             s.close();
-        }
+        }*/
     }
 
 }
