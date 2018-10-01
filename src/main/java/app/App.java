@@ -9,7 +9,7 @@ public class App {
 
     public static void main(String args[]){
         Transaction.set(s);
-        Transaction.paymentTransaction(5,5,5, BigDecimal.valueOf(10));
+        Transaction.paymentTransaction(5,5,5, BigDecimal.valueOf( 10));
 
         try{
             Transaction.handleInput();
