@@ -429,7 +429,7 @@ public class Transaction {
             while(it2.hasNext()){
                 Row Item = it2.next();
                 items.add(Item.getInt("OL_I_ID"));
-                if(Item.getDecimal("OL_QUANTITY")==null)
+                if(Item.getDecimal("OL_QUANTITY").equals(null))
                     continue;
                 popItemQuantity.put(Item.getInt("OL_I_ID"),Item.getDecimal("OL_QUANTITY"));
                 if(Item.getDecimal("OL_QUANTITY").equals(max))
