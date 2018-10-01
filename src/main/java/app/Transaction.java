@@ -366,13 +366,9 @@ public class Transaction {
     }
     //Transaction 6
     public static void popularItem(int wid, int did, int L)throws TransactionException{
-        Row tmp = s.execute(QueryBuilder
-                .select().all()
-                .from(Connector.keyspace, "district")
-                .where(QueryBuilder.eq("D_W_ID", wid))
-                .and(QueryBuilder.eq("D_ID", did))
-                .allowFiltering()).one();
-        int N = tmp.getInt("D_NEXT_O_ID");
+        Row district = w.findDistrict(wid,did).orElseThrow(()-> new TransactionException("Unable to find district with id:" + did));
+
+        int N = district.getInt("D_NEXT_O_ID");
         System.out.println("Hier:" + N);
         ResultSet S = s.execute(QueryBuilder
                 .select().all()
@@ -394,20 +390,18 @@ public class Transaction {
         //itemID -> Quantity
         HashMap<Integer,BigDecimal> popItemQuantity = new HashMap<>();
         while(it.hasNext()) {
-            Row tmp3 = it.next();
-            int O_ID = tmp3.getInt("O_ID");
-            String CName = "" + tmp3.getInt("O_C_ID");
-            String timeEntry = tmp3.getTimestamp("O_ENTRY_D").toString();
+            Row currentOrder = it.next();
+            int O_ID = currentOrder.getInt("O_ID");
+
             //get max popularity
             BigDecimal max = s.execute(QueryBuilder
                     .select().max("OL_QUANTITY")
                     .from(Connector.keyspace, "order_line")
                     .where(QueryBuilder.eq("OL_D_ID", did))
                     .and(QueryBuilder.eq("OL_W_ID", wid))
-                    .and(QueryBuilder.gte("OL_O_ID", tmp3.getInt("O_ID")))
+                    .and(QueryBuilder.eq("OL_O_ID", currentOrder.getInt("O_ID")))
                     .allowFiltering()
             ).one().getDecimal(0);
-            order p = new order(O_ID,timeEntry,CName,null);
             if(max == null)
                 max = BigDecimal.valueOf(0);
             ResultSet popItems = s.execute(QueryBuilder
@@ -415,10 +409,11 @@ public class Transaction {
                     .from(Connector.keyspace, "order_line")
                     .where(QueryBuilder.eq("OL_D_ID", did))
                     .and(QueryBuilder.eq("OL_W_ID", wid))
-                    .and(QueryBuilder.gte("OL_O_ID", tmp3.getInt("O_ID")))
+                    .and(QueryBuilder.eq("OL_O_ID", O_ID))
                     .and(QueryBuilder.eq("OL_QUANTITY", max))
                     .allowFiltering()
             );
+
             Iterator<Row> it2 = popItems.iterator();
             HashSet<Integer> item = new HashSet<>();
             while(it2.hasNext()){
@@ -427,7 +422,7 @@ public class Transaction {
                 popItemQuantity.put(popItem.getInt("OL_I_ID"),popItem.getDecimal("OL_QUANTITY"));
             }
             //get just popular items
-            popularItems.put(p.O_ID,item);
+            popularItems.put(O_ID,item);
             orders.add(O_ID);
         }
         //berechnung andern, namen von item und customer holenSSSS
