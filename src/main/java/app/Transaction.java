@@ -351,8 +351,6 @@ public class Transaction {
         );*/
         s.execute(QueryBuilder.update(Connector.keyspace, "customer")
                 .with(QueryBuilder.set("C_BALANCE", BigDecimal.valueOf(10)))
-                .and(QueryBuilder.set("C_YTD_PAYMENT",BigDecimal.valueOf(10)))
-                .and(QueryBuilder.set("C_PAYMENT_CNT",BigDecimal.valueOf(10)))
                 .where(QueryBuilder.eq("C_W_ID", cwid))
                 .and(QueryBuilder.eq("C_D_ID",cdid))
                 .and(QueryBuilder.eq("C_ID",cid))
