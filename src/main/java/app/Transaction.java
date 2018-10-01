@@ -365,7 +365,7 @@ public class Transaction {
         System.out.println("Payment: " + payment);
     }
     //Transaction 6
-    private static void popularItem(int wid, int did, int L)throws TransactionException{
+    public static void popularItem(int wid, int did, int L)throws TransactionException{
         Row tmp = s.execute(QueryBuilder
                 .select().all()
                 .from(Connector.keyspace, "district")
@@ -388,7 +388,7 @@ public class Transaction {
         System.out.println("Number of last order to be examined: " + L);
 
         Iterator<Row> it = S.iterator();
-        ArrayList<order> orders = new ArrayList<>();
+        ArrayList<Integer> orders = new ArrayList<>();
         //orderNumber -> popularItems
         HashMap<Integer, HashSet<Integer>> popularItems = new HashMap<>();
         //itemID -> Quantity
@@ -428,17 +428,18 @@ public class Transaction {
             }
             //get just popular items
             popularItems.put(p.O_ID,item);
-            orders.add(p);
+            orders.add(O_ID);
         }
         //berechnung andern, namen von item und customer holenSSSS
-        for(order o : orders ){
-            System.out.println("Order ID: " + o.O_ID + " Date " + o.O_ENTRY_D);
-            System.out.println("CName: " + o.CName);
-            for(Integer i : popularItems.get(o.O_ID)){
+        for(Integer o : orders ){
+            Row Order = w.findOrder(wid,did,o).orElseThrow(() -> new TransactionException("Unable to find Order with id:" + o));
+            System.out.println("Order ID: " + o + " Date " + Order.getTimestamp("O_ENTRY_D"));
+            System.out.println("CName: " + Order.getInt("C_ID"));
+            for(Integer i : popularItems.get(o)){
                 System.out.println("Popular Item: " + i + " Quantity: " + popItemQuantity.get(i));
                 int counter = 0;
-                for(order t : orders){
-                    if(popularItems.get(t.O_ID).contains(i))
+                for(Integer t : orders){
+                    if(popularItems.get(t).contains(i))
                         counter++;
                 }
                 System.out.println(100*(float)counter / (float)orders.size());

@@ -10,7 +10,7 @@ public class App {
     public static void main(String args[]){
         Transaction.set(s);
         try{
-            Transaction.paymentTransaction(5,5,5, BigDecimal.valueOf( 10));
+            Transaction.popularItem(5,1,5);
 
         }catch (Exception e){
             System.err.println(e);
