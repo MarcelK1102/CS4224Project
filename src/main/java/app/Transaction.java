@@ -445,6 +445,8 @@ public class Transaction {
                 System.out.println("Popular Item: " + i + " Quantity: " + popItemQuantity.get(i));
                 int counter = 0;
                 for(Integer t : orders){
+                    if(allItems.get(t)==null)
+                        continue;
                     if(allItems.get(t).contains(i))
                         counter++;
                 }
