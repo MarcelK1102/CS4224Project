@@ -341,8 +341,9 @@ public class Transaction {
                 .and(QueryBuilder.eq("D_ID",cdid))
         );
         Row C = w.findCustomer(cwid, cdid, cid).orElseThrow(() -> new TransactionException("Unable to find customer with id:" + cid));
+        System.out.println("Hier angekommen " + C.getDecimal("C_YTD_PAYMENT").add(payment));
         s.execute(QueryBuilder.update(Connector.keyspace, "customer")
-                .with(QueryBuilder.set("C_YTD_PAYMENT", C.getDecimal("C_YTD_PAYMENT").add(payment)))
+                .with(QueryBuilder.set("C_YTD_PAYMENT", BigDecimal.valueOf(100)))
                 .where(QueryBuilder.eq("C_W_ID", cwid))
                 .and(QueryBuilder.eq("C_D_ID",cdid))
                 .and(QueryBuilder.eq("C_ID",cid))
