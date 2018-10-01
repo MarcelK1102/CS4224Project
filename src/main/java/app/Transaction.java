@@ -373,9 +373,9 @@ public class Transaction {
                 .where(QueryBuilder.eq("D_ID",did))
                 .and(QueryBuilder.eq("D_W_ID",wid)))
                 .one();
-        //int N = district.getInt("D_NEXT_O_ID");
-        System.out.println("Hier:" );
-        /*ResultSet S = s.execute(QueryBuilder
+        int N = district.getInt("D_NEXT_O_ID");
+        System.out.println("Hier:" + N);
+        ResultSet S = s.execute(QueryBuilder
                 .select().all()
                 .from(Connector.keyspace, "orders")
                 .where(QueryBuilder.eq("O_D_ID",did))
@@ -394,7 +394,7 @@ public class Transaction {
         HashMap<Integer, HashSet<Integer>> popularItems = new HashMap<>();
         //itemID -> Quantity
         HashMap<Integer,BigDecimal> popItemQuantity = new HashMap<>();
-        /*while(it.hasNext()) {
+        while(it.hasNext()) {
             Row currentOrder = it.next();
             int O_ID = currentOrder.getInt("O_ID");
 
@@ -446,7 +446,7 @@ public class Transaction {
 
             }
 
-        }*/
+        }
     }
 
     private static final Scanner sc = new Scanner(System.in);
