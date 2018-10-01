@@ -399,7 +399,7 @@ public class Transaction {
                     .from(Connector.keyspace, "order_line")
                     .where(QueryBuilder.eq("OL_D_ID", did))
                     .and(QueryBuilder.eq("OL_W_ID", wid))
-                    .and(QueryBuilder.eq("OL_O_ID", currentOrder.getInt("O_ID")))
+                    .and(QueryBuilder.eq("OL_O_ID", O_ID))
                     .allowFiltering()
             ).one().getDecimal(0);
             if(max == null)
