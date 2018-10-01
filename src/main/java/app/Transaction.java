@@ -341,7 +341,12 @@ public class Transaction {
                 .and(QueryBuilder.eq("D_ID",cdid))
         );
         Row C = w.findCustomer(cwid, cdid, cid).orElseThrow(() -> new TransactionException("Unable to find customer with id:" + cid));
-        System.out.println("Hier angekommen " + C.getDecimal("C_YTD_PAYMENT").add(payment));
+        s.execute(QueryBuilder.update(Connector.keyspace, "customer")
+                .with(QueryBuilder.set("C_BALANCE", C.getFloat("C_BALANCE")-payment.floatValue()))
+                .where(QueryBuilder.eq("C_W_ID", cwid))
+                .and(QueryBuilder.eq("C_D_ID",cdid))
+                .and(QueryBuilder.eq("C_ID",cid))
+        );
         s.execute(QueryBuilder.update(Connector.keyspace, "customer")
                 .with(QueryBuilder.set("C_YTD_PAYMENT", BigDecimal.valueOf(100)))
                 .where(QueryBuilder.eq("C_W_ID", cwid))
@@ -349,17 +354,7 @@ public class Transaction {
                 .and(QueryBuilder.eq("C_ID",cid))
         );
         s.execute(QueryBuilder.update(Connector.keyspace, "customer")
-                .with(QueryBuilder.set("C_BALANCE", C.getDecimal("C_BALANCE").subtract(payment)))
-                .where(QueryBuilder.eq("C_W_ID", cwid))
-                .and(QueryBuilder.eq("C_D_ID",cdid))
-                .and(QueryBuilder.eq("C_ID",cid))
-        );
-
-
-        C = w.findCustomer(cwid, cdid, cid).orElseThrow(() -> new TransactionException("Unable to find customer with id:" + cid));
-
-        s.execute(QueryBuilder.update(Connector.keyspace, "customer")
-                .with(QueryBuilder.set("C_PAYMENT_CNT",C.getDecimal("C_PAYMENT_CNT").add(BigDecimal.ONE)))
+                .with(QueryBuilder.set("C_PAYMENT_CNT",C.getInt("C_PAYMENT_CNT")+1))
                 .where(QueryBuilder.eq("C_W_ID", cwid))
                 .and(QueryBuilder.eq("C_D_ID",cdid))
                 .and(QueryBuilder.eq("C_ID",cid))
