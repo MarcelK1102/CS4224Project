@@ -9,8 +9,12 @@ public class App {
 
     public static void main(String args[]){
         Transaction.set(s);
-        Transaction.paymentTransaction(5,5,5, BigDecimal.valueOf( 10));
+        try{
+            Transaction.paymentTransaction(5,5,5, BigDecimal.valueOf( 10));
 
+        }catch (Exception e){
+            System.err.println(e);
+        }
         try{
             Transaction.handleInput();
             Transaction.handleOutput();

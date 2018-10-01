@@ -322,7 +322,7 @@ public class Transaction {
         }
     }
     //Transaction 2
-    public static void paymentTransaction(int cwid, int cdid, int cid, BigDecimal payment){
+    public static void paymentTransaction(int cwid, int cdid, int cid, BigDecimal payment) throws TransactionException {
         BigDecimal currentWarehouse = s.execute(QueryBuilder.select()
                 .from(Connector.keyspace, "warehouse")
                 .where(QueryBuilder.eq("W_ID", cwid))).one().getDecimal("W_YTD");
@@ -340,7 +340,15 @@ public class Transaction {
                 .where(QueryBuilder.eq("D_W_ID", cwid))
                 .and(QueryBuilder.eq("D_ID",cdid))
         );
-
+        Row C = w.findCustomer(cwid, cdid, cid).orElseThrow(() -> new TransactionException("Unable to find customer with id:" + cid));
+        s.execute(QueryBuilder.update(Connector.keyspace, "district")
+                .with(QueryBuilder.set("C_BALANCE", C.getDecimal("C_BALANCE").subtract(payment)))
+                .and(QueryBuilder.set("C_YTD_PAYMENT",C.getDecimal("C_YTD_PAYMENT").add(payment)))
+                .and(QueryBuilder.set("C_PAYMENT_CNT",C.getDecimal("C_PAYMENT_CNT").subtract(BigDecimal.ONE)))
+                .where(QueryBuilder.eq("C_W_ID", cwid))
+                .and(QueryBuilder.eq("C_D_ID",cdid))
+                .and(QueryBuilder.eq("C_ID",cid))
+        );
     }
     //Transaction 6
     private static void popularItem(int wid, int did, int L)throws TransactionException{
