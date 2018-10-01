@@ -342,13 +342,13 @@ public class Transaction {
         );
         Row C = w.findCustomer(cwid, cdid, cid).orElseThrow(() -> new TransactionException("Unable to find customer with id:" + cid));
         s.execute(QueryBuilder.update(Connector.keyspace, "customer")
-                .with(QueryBuilder.set("C_BALANCE", C.getFloat("C_BALANCE")-payment.floatValue()))
+                .with(QueryBuilder.set("C_BALANCE", C.getDecimal("C_BALANCE").subtract(payment)))
                 .where(QueryBuilder.eq("C_W_ID", cwid))
                 .and(QueryBuilder.eq("C_D_ID",cdid))
                 .and(QueryBuilder.eq("C_ID",cid))
         );
         s.execute(QueryBuilder.update(Connector.keyspace, "customer")
-                .with(QueryBuilder.set("C_YTD_PAYMENT", BigDecimal.valueOf(100)))
+                .with(QueryBuilder.set("C_YTD_PAYMENT", C.getFloat("C_YTD_PAYMENT")+payment.floatValue()))
                 .where(QueryBuilder.eq("C_W_ID", cwid))
                 .and(QueryBuilder.eq("C_D_ID",cdid))
                 .and(QueryBuilder.eq("C_ID",cid))
