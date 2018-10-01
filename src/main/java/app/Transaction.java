@@ -3,12 +3,7 @@ package app;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -326,7 +321,19 @@ public class Transaction {
             System.out.println("OL_DELIVERY_D:"  + currOL.getTimestamp("OL_DELIVERY_D"));
         }
     }
+    //Transaction 2
+    private static void paymentTransaction(int cwid, int cdid, int cid, float payment){
+        s.execute(QueryBuilder.update(Connector.keyspace, "warehouse")
+                .with(QueryBuilder.add("W_YTD", payment))
+                .where(QueryBuilder.eq("W_ID", cwid))
+        );
+        s.execute(QueryBuilder.update(Connector.keyspace, "district")
+                .with(QueryBuilder.add("D_YTD", payment))
+                .where(QueryBuilder.eq("D_W_ID", cwid))
+                .and(QueryBuilder.eq("D_ID",cdid))
+        );
 
+    }
     //Transaction 6
     private static void popularItem(int wid, int did, int L)throws TransactionException{
         Row tmp = s.execute(QueryBuilder
@@ -353,7 +360,7 @@ public class Transaction {
         Iterator<Row> it = S.iterator();
         ArrayList<order> orders = new ArrayList<>();
         //orderNumber -> popularItems
-        HashMap<Integer,HashSet<Integer>> popularItems = new HashMap<>();
+        HashMap<Integer, HashSet<Integer>> popularItems = new HashMap<>();
         //itemID -> Quantity
         HashMap<Integer,BigDecimal> popItemQuantity = new HashMap<>();
         while(it.hasNext()) {
