@@ -334,7 +334,7 @@ public class Transaction {
         BigDecimal currentDistrict = s.execute(QueryBuilder.select()
                 .from(Connector.keyspace, "district")
                 .where(QueryBuilder.eq("D_W_ID", cwid))
-                .and(QueryBuilder.eq("D_ID",cdid))).one().getDecimal("W_YTD");
+                .and(QueryBuilder.eq("D_ID",cdid))).one().getDecimal("D_YTD");
         s.execute(QueryBuilder.update(Connector.keyspace, "district")
                 .with(QueryBuilder.set("D_YTD", payment.add(currentDistrict)))
                 .where(QueryBuilder.eq("D_W_ID", cwid))
