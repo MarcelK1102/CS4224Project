@@ -411,7 +411,6 @@ public class Transaction {
             ).one().getDecimal(0);
             if(max == null) {
                 max = BigDecimal.valueOf(0);
-                continue;
             }
             ResultSet Items = s.execute(QueryBuilder
                     .select().all()
@@ -419,7 +418,6 @@ public class Transaction {
                     .where(QueryBuilder.eq("OL_D_ID", did))
                     .and(QueryBuilder.eq("OL_W_ID", wid))
                     .and(QueryBuilder.eq("OL_O_ID", O_ID))
-                    .and(QueryBuilder.gt("OL_QUANTITY", 0))
                     .allowFiltering()
             );
 
@@ -429,8 +427,6 @@ public class Transaction {
             while(it2.hasNext()){
                 Row Item = it2.next();
                 items.add(Item.getInt("OL_I_ID"));
-                if(Item.getDecimal("OL_QUANTITY")==(null))
-                    continue;
                 popItemQuantity.put(Item.getInt("OL_I_ID"),Item.getDecimal("OL_QUANTITY"));
                 if(Item.getDecimal("OL_QUANTITY").equals(max))
                     popItems.add(Item.getInt("OL_O_ID"));
