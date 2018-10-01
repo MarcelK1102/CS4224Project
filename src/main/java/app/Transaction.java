@@ -429,7 +429,7 @@ public class Transaction {
                 items.add(Item.getInt("OL_I_ID"));
                 popItemQuantity.put(Item.getInt("OL_I_ID"),Item.getDecimal("OL_QUANTITY"));
                 if(Item.getDecimal("OL_QUANTITY").equals(max)) {
-                    popItems.add(Item.getInt("OL_Ik_ID"));
+                    popItems.add(Item.getInt("OL_I_ID"));
                 }
             }
             //get just popular items
