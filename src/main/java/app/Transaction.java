@@ -433,6 +433,7 @@ public class Transaction {
                 }
             }
             //get just popular items
+            allItems.put(O_ID,items);
             popularItems.put(O_ID,popItems);
             orders.add(O_ID);
         }
