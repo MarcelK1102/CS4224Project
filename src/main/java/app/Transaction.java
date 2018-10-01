@@ -431,7 +431,7 @@ public class Transaction {
                 System.out.println(Item.getDecimal("OL_QUANTITY") + " " + max + " " + Item.getDecimal("OL_QUANTITY").equals(max));
                 if(Item.getDecimal("OL_QUANTITY").equals(max)) {
                     System.out.println("klappt");
-                    popItems.add(Item.getInt("OL_O_ID"));
+                    popItems.add(Item.getInt("OL_I_ID"));
                 }
             }
             //get just popular items
