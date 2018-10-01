@@ -429,7 +429,7 @@ public class Transaction {
             while(it2.hasNext()){
                 Row Item = it2.next();
                 items.add(Item.getInt("OL_I_ID"));
-                if(Item.getDecimal("OL_QUANTITY").equals(null))
+                if(Item.getDecimal("OL_QUANTITY")==(null))
                     continue;
                 popItemQuantity.put(Item.getInt("OL_I_ID"),Item.getDecimal("OL_QUANTITY"));
                 if(Item.getDecimal("OL_QUANTITY").equals(max))
@@ -448,10 +448,10 @@ public class Transaction {
                 System.out.println("Popular Item: " + i + " Quantity: " + popItemQuantity.get(i));
                 int counter = 0;
                 for(Integer t : orders){
-                    if(allItems.get(t).contains(i))
+                    //if(allItems.get(t).contains(i))
                         counter++;
                 }
-                System.out.println(100*(float)counter / (float)orders.size());
+                //System.out.println(100*(float)counter / (float)orders.size());
 
             }
 
