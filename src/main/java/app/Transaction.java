@@ -366,7 +366,7 @@ public class Transaction {
     }
     //Transaction 6
     public static void popularItem(int wid, int did, int L)throws TransactionException{
-        Row district = w.findDistrict(wid,did).orElseThrow(()-> new TransactionException("Unable to find district with id:" + did));
+        Row district = w.findDistrict(wid,did).orElseThrow(() -> new TransactionException("Unable to find customer with id:" + wid));
 
         int N = district.getInt("D_NEXT_O_ID");
         System.out.println("Hier:" + N);
