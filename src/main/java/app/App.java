@@ -6,6 +6,7 @@ public class App {
     static Session s = new Connector().connect();
 
     public static void main(String args[]){
+        Transaction.paymentTransaction(5,5,5,10);
         Transaction.set(s);
         try{
             Transaction.handleInput();
