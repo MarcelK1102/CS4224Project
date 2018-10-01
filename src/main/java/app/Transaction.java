@@ -390,6 +390,8 @@ public class Transaction {
 
         Iterator<Row> it = S.iterator();
         ArrayList<Integer> orders = new ArrayList<>();
+        //orderNumber -> allItems
+        HashMap<Integer, HashSet<Integer>> allItems = new HashMap<>();
         //orderNumber -> popularItems
         HashMap<Integer, HashSet<Integer>> popularItems = new HashMap<>();
         //itemID -> Quantity
@@ -409,25 +411,28 @@ public class Transaction {
             ).one().getDecimal(0);
             if(max == null)
                 max = BigDecimal.valueOf(0);
-            ResultSet popItems = s.execute(QueryBuilder
+            ResultSet Items = s.execute(QueryBuilder
                     .select().all()
                     .from(Connector.keyspace, "order_line")
                     .where(QueryBuilder.eq("OL_D_ID", did))
                     .and(QueryBuilder.eq("OL_W_ID", wid))
                     .and(QueryBuilder.eq("OL_O_ID", O_ID))
-                    .and(QueryBuilder.eq("OL_QUANTITY", max))
+                    //.and(QueryBuilder.eq("OL_QUANTITY", max))
                     .allowFiltering()
             );
 
-            Iterator<Row> it2 = popItems.iterator();
-            HashSet<Integer> item = new HashSet<>();
+            Iterator<Row> it2 = Items.iterator();
+            HashSet<Integer> items = new HashSet<>();
+            HashSet<Integer> popItems = new HashSet<>();
             while(it2.hasNext()){
-                Row popItem = it2.next();
-                item.add(popItem.getInt("OL_I_ID"));
-                popItemQuantity.put(popItem.getInt("OL_I_ID"),popItem.getDecimal("OL_QUANTITY"));
+                Row Item = it2.next();
+                items.add(Item.getInt("OL_I_ID"));
+                popItemQuantity.put(Item.getInt("OL_I_ID"),Item.getDecimal("OL_QUANTITY"));
+                if(Item.getDecimal("OL_QUANTITY").equals(max))
+                    popItems.add(Item.getInt("OL_O_ID"));
             }
             //get just popular items
-            popularItems.put(O_ID,item);
+            popularItems.put(O_ID,popItems);
             orders.add(O_ID);
         }
         //berechnung andern, namen von item und customer holenSSSS
@@ -439,7 +444,7 @@ public class Transaction {
                 System.out.println("Popular Item: " + i + " Quantity: " + popItemQuantity.get(i));
                 int counter = 0;
                 for(Integer t : orders){
-                    if(popularItems.get(t).contains(i))
+                    if(allItems.get(t).contains(i))
                         counter++;
                 }
                 System.out.println(100*(float)counter / (float)orders.size());
