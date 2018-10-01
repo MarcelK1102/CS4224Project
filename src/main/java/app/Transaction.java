@@ -434,7 +434,7 @@ public class Transaction {
         for(Integer o : orders ){
             Row Order = w.findOrder(wid,did,o).orElseThrow(() -> new TransactionException("Unable to find Order with id:" + o));
             System.out.println("Order ID: " + o + " Date " + Order.getTimestamp("O_ENTRY_D"));
-            System.out.println("CName: " + Order.getInt("C_ID"));
+            System.out.println("CName: " + Order.getInt("O_C_ID"));
             for(Integer i : popularItems.get(o)){
                 System.out.println("Popular Item: " + i + " Quantity: " + popItemQuantity.get(i));
                 int counter = 0;
