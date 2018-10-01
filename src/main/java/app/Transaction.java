@@ -389,7 +389,7 @@ public class Transaction {
         HashMap<Integer, HashSet<Integer>> popularItems = new HashMap<>();
         //itemID -> Quantity
         HashMap<Integer,BigDecimal> popItemQuantity = new HashMap<>();
-        while(it.hasNext()) {
+        /*while(it.hasNext()) {
             Row currentOrder = it.next();
             int O_ID = currentOrder.getInt("O_ID");
 
@@ -441,7 +441,7 @@ public class Transaction {
 
             }
 
-        }
+        }*/
     }
 
     private static final Scanner sc = new Scanner(System.in);
