@@ -366,8 +366,13 @@ public class Transaction {
     }
     //Transaction 6
     public static void popularItem(int wid, int did, int L)throws TransactionException{
-        Row district = w.findDistrict(wid,did).orElseThrow(() -> new TransactionException("Unable to find customer with id:" + wid));
-
+        //Row district = w.findDistrict(wid,did).orElseThrow(() -> new TransactionException("Unable to find customer with id:" + wid));
+        Row district = s.execute(QueryBuilder
+                .select().all()
+                .from(Connector.keyspace, "district")
+                .where(QueryBuilder.eq("D_ID",did))
+                .and(QueryBuilder.eq("D_W_ID",wid)))
+                .one();
         //int N = district.getInt("D_NEXT_O_ID");
         System.out.println("Hier:" );
         /*ResultSet S = s.execute(QueryBuilder
