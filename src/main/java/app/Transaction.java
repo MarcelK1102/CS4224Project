@@ -323,12 +323,20 @@ public class Transaction {
     }
     //Transaction 2
     public static void paymentTransaction(int cwid, int cdid, int cid, BigDecimal payment){
+        BigDecimal currentWarehouse = s.execute(QueryBuilder.select()
+                .from(Connector.keyspace, "warehouse")
+                .where(QueryBuilder.eq("W_ID", cwid))).one().getDecimal("W_YTD");
+
         s.execute(QueryBuilder.update(Connector.keyspace, "warehouse")
-                .with(QueryBuilder.set("W_YTD", payment))
+                .with(QueryBuilder.set("W_YTD", payment.add(currentWarehouse)))
                 .where(QueryBuilder.eq("W_ID", cwid))
         );
+        BigDecimal currentDistrict = s.execute(QueryBuilder.select()
+                .from(Connector.keyspace, "district")
+                .where(QueryBuilder.eq("D_W_ID", cwid))
+                .and(QueryBuilder.eq("D_ID",cdid))).one().getDecimal("W_YTD");
         s.execute(QueryBuilder.update(Connector.keyspace, "district")
-                .with(QueryBuilder.add("D_YTD", payment))
+                .with(QueryBuilder.set("D_YTD", payment.add(currentDistrict)))
                 .where(QueryBuilder.eq("D_W_ID", cwid))
                 .and(QueryBuilder.eq("D_ID",cdid))
         );
