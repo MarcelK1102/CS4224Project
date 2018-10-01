@@ -417,7 +417,7 @@ public class Transaction {
                     .where(QueryBuilder.eq("OL_D_ID", did))
                     .and(QueryBuilder.eq("OL_W_ID", wid))
                     .and(QueryBuilder.eq("OL_O_ID", O_ID))
-                    //.and(QueryBuilder.eq("OL_QUANTITY", max))
+                    .and(QueryBuilder.gt("OL_QUANTITY", 0))
                     .allowFiltering()
             );
 
