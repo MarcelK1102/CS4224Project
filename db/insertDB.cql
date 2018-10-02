@@ -67,7 +67,7 @@ COPY item (
     I_PRICE, 
     I_IM_ID, 
     I_DATA
-) FROM '';
+) FROM 'item.csv';
 
 COPY order_line ( 
     OL_W_ID, 
