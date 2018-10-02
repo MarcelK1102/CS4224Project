@@ -10,10 +10,16 @@ repositories {
 }
 // end::repositories[]
 
-// tag::jar[]
-jar {
-    baseName = 'gs-gradle'
-    version =  '0.1.0'
+//create a single Jar with all dependencies
+task fatJar(type: Jar) {
+	manifest {
+        attributes 'Cassandra wholesale supplier client': 'Gradle Jar File',  
+        	'Implementation-Version': 1,
+        	'Main-Class': 'app.App'
+    }
+    baseName = project.name + '-all'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
 }
 // end::jar[]
 
@@ -23,6 +29,7 @@ targetCompatibility = 1.8
 
 dependencies {
     compile "com.datastax.cassandra:cassandra-driver-core:3.6.0"
+    compile "org.slf4j:slf4j-log4j12:1.7.12"
     testCompile "junit:junit:4.12"
 }
 // end::dependencies[]
