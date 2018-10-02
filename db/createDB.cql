@@ -2,7 +2,7 @@ CREATE KEYSPACE IF NOT EXISTS Warehouse WITH replication = {'class': 'SimpleStra
 USE Warehouse;
 
 CREATE TABLE warehouse ( 
-    W_ID INT PRIMARY KEY, 
+    W_ID INT, 
     W_NAME VARCHAR, 
     W_STREET_1 VARCHAR, 
     W_STREET_2 VARCHAR, 
@@ -10,7 +10,8 @@ CREATE TABLE warehouse (
     W_STATE VARCHAR, 
     W_ZIP VARCHAR,
     W_TAX DECIMAL,
-    W_YTD DECIMAL
+    W_YTD DECIMAL,
+    PRIMARY KEY(W_ID)
 );
 
 CREATE TABLE district ( 
@@ -67,11 +68,12 @@ CREATE TABLE orders (
 
 
 CREATE TABLE item ( 
-    I_ID INT PRIMARY KEY, 
+    I_ID INT, 
     I_NAME VARCHAR, 
     I_PRICE DECIMAL, 
     I_IM_ID INT, 
-    I_DATA VARCHAR
+    I_DATA VARCHAR,
+    PRIMARY KEY(I_ID)
 );
 
 CREATE TABLE order_line ( 
