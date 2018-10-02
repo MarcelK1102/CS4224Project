@@ -3,7 +3,14 @@ package app;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Scanner;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -17,6 +24,7 @@ public class Transaction {
 
     private static Session s;
     private static Wrapper w;
+
     public static void set(Session s){
         Transaction.s = s;
         w = new Wrapper(s);
@@ -38,21 +46,24 @@ public class Transaction {
     }
 
     //Transaction 1
-    private static void newOrder(int wid, int did, int cid, List<Integer> ids, List<Integer> wids, List<Integer> quantities ) throws TransactionException{
+    private static void newOrder(int wid, int did, int cid, List<Integer> ids, List<Integer> wids, List<Integer> quantities ) throws NoSuchElementException{
+        //Processing
         //Step 1
-        int N = w.findDistrict(wid, did, "D_NEXT_O_ID")
-            .orElseThrow(() -> new TransactionException("Unable to find wid:"+wid+" did:" + did))
-            .getInt(0) + 1;
-        
-        // https://stackoverflow.com/questions/3935915/how-to-create-auto-increment-ids-in-cassandra/29391877#29391877
+        Row r = w.findDistrict(wid, did, "D_NEXT_O_ID").get();
+        int N;
+
+        //https://stackoverflow.com/questions/3935915/how-to-create-auto-increment-ids-in-cassandra/29391877#29391877
         //Step 2
-        while(!s.execute(QueryBuilder.update("district")
+        do{
+            N = r.getInt("D_NEXT_O_ID");
+            r = s.execute(QueryBuilder
+                .update("district")
                 .with(QueryBuilder.set("D_NEXT_O_ID", N))
                 .where(QueryBuilder.eq("D_W_ID", wid))
                 .and(QueryBuilder.eq("D_ID", did))
                 .onlyIf(QueryBuilder.eq("D_NEXT_O_ID", N-1))
-            ).one().getBool(0)){N++;}
-
+            ).one();
+        } while(r.getBool(0));
         //Step 3
         s.execute((QueryBuilder.insertInto("orders")
                 .value("O_ID", N)
@@ -65,16 +76,14 @@ public class Transaction {
         ));
 
         //Step 4
-        int totalAmount = 0;
+        BigDecimal totalAmount = BigDecimal.ZERO;
         
         //Step 5
         for(int i = 0; i < ids.size(); i++){
-            Row r;
             int iid = ids.get(i);
             while(true){
                 //Step a
-                r = w.findStock(wid, iid, "S_QUANTITY"," S_YTD"," S_ORDER_CNT"," S_REMOTE_CNT"," S_DIST_" + String.format("%02d", did))
-                    .orElseThrow(() -> new TransactionException("Unable to find stock for item:" + ids.get(0) + " in warehouse:" + wid));
+                r = w.findStock(wid, iid, "S_QUANTITY"," S_YTD"," S_ORDER_CNT"," S_REMOTE_CNT"," S_DIST_" + String.format("%02d", did)).get();
                 if(r == null){
                     System.out.println("Unable to find stock for wid:" + wid + " iID = " + iid);
                     continue;
@@ -99,17 +108,17 @@ public class Transaction {
                     break;
             }
             //Step e
-            int itemAmount = w.findItem(iid, "I_PRICE").orElseThrow(() -> new TransactionException("Unable to find item with id:" + iid)).getInt(0);
+            BigDecimal itemAmount = w.findItem(iid, "I_PRICE").get().getDecimal(0);
             
             //Step f
-            totalAmount += itemAmount;
+            totalAmount = totalAmount.add(itemAmount);
             
             //Step g
             s.execute(QueryBuilder.insertInto("order_line")
                 .value("OL_O_ID", N)
                 .value("OL_D_ID", did)
                 .value("OL_W_ID", wid)
-                .value("OL_NUMBER", i)
+                .value("OL_NUMBER", i + 1)
                 .value("OL_I_ID", iid)
                 .value("OL_SUPPLY_W_ID", wids.get(i))
                 .value("OL_QUANTITY", quantities.get(i))
@@ -117,7 +126,29 @@ public class Transaction {
                 .value("OL_DIST_INFO","S_DIST_" + String.format("%02d", did))
             );
         }
-        
+        //Step 6
+        BigDecimal wTax = w.findWarehouse(wid, "W_TAX").get().getDecimal(0);
+        BigDecimal dTax = w.findDistrict(wid, did, "D_TAX").get().getDecimal(0);
+        BigDecimal cDisc = w.findCustomer(wid, did, cid, "C_DISCOUNT").get().getDecimal(0);
+        totalAmount = totalAmount.multiply(BigDecimal.ONE.add(dTax).add(wTax)).multiply(BigDecimal.ONE.subtract(cDisc));
+
+        //Step 2
+        System.out.println(wTax + " " + dTax);
+
+        //Step 3
+        r = w.findOrder(wid, did, N, "O_ID", "O_ENTRY_ID").get();
+        System.out.println(r);
+
+        //Step 4
+        System.out.println(ids.size() + " " + totalAmount);
+
+        //Step 5
+        for(int i = 0; i < ids.size(); i++){
+            String iName = w.findItem(ids.get(i), "I_NAME").get().getString(0);
+            BigDecimal olAmount = w.findOrderLine(wid, did, ids.get(0), i+1, "OL_AMOUNT").get().getDecimal(0);
+            BigDecimal sQuantity = w.findStock(wid, ids.get(i)).get().getDecimal(0);
+            System.out.printf("%d %s %d %s %s %s\n", ids.get(i), iName, wids.get(0), quantities.get(0), olAmount, sQuantity);
+        }
     }
 
     //Transaction 5
