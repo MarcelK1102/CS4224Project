@@ -13,9 +13,9 @@ public class App {
 
         BasicConfigurator.configure();
         try{
-            System.out.println("hier angekommen");
             Transaction.set(s);
             Transaction.paymentTransaction(5,5,5, BigDecimal.valueOf(13));
+            Transaction.processDelivery(5,7);
         }
         catch (Exception e ){
             System.out.println(e.toString());

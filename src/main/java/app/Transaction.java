@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.sql.Date;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -216,20 +217,39 @@ public class Transaction {
     }
 
     //transaction 3
-    private static void processDelivery(int wid, int carrierid) throws TransactionException {
+    public static void processDelivery(int wid, int carrierid) throws TransactionException {
         for (int districtNo = 1; districtNo <= 10; districtNo++){
             //System.out.println("district: " + districtNo);
             //a)
-            int N = s.execute(QueryBuilder
+            /*int N = s.execute(QueryBuilder
             .select().min("O_ID")
             .from(Connector.keyspace, "orders")
             .where(QueryBuilder.eq("O_W_ID", wid))
             .and(QueryBuilder.eq("O_D_ID", districtNo))
             .and(QueryBuilder.eq("O_CARRIER_ID", -1))
             .allowFiltering())
-            .one().getInt(0);
+            .one().getInt(0);*/
 
             //System.out.println("N: " +N);
+            ArrayList<Integer> oids = new ArrayList<>();
+
+            ResultSet S = s.execute(QueryBuilder
+            .select().all()
+            .from(Connector.keyspace, "orders")
+            .where(QueryBuilder.eq("O_W_ID", wid))
+            .and(QueryBuilder.eq("O_D_ID", districtNo))
+            .allowFiltering());
+            //System.out.println("N: " +N);
+
+            Iterator<Row> it = S.iterator();
+            while(it.hasNext()){
+                Row curr = it.next();
+                if (curr.getInt("O_CARRIER_ID")==0){
+                    oids.add(curr.getInt("O_ID"));
+                }
+            }
+
+            int N = Collections.min(oids);
 
             Row X;
             try {
@@ -237,7 +257,6 @@ public class Transaction {
                         .orElseThrow(() -> new TransactionException("Unable to find order with id:" + N));
             } catch (TransactionException e) {
                 //skip if there is no order with id N
-                System.out.println("skipped");
                 continue;
             }
             int cid = X.getInt("O_C_ID");
@@ -260,9 +279,9 @@ public class Transaction {
             .and(QueryBuilder.eq("OL_D_ID", districtNo))
             .and(QueryBuilder.eq("OL_O_ID", N)));
 
-            Iterator<Row> it = orderlines.iterator();
-            while(it.hasNext()){
-                Row currOL = it.next();
+            Iterator<Row> it2 = orderlines.iterator();
+            while(it2.hasNext()){
+                Row currOL = it2.next();
                 int OL_Number = currOL.getInt("OL_NUMBER");
 
                 s.execute(QueryBuilder.update(Connector.keyspace, "order_line")
@@ -357,7 +376,6 @@ public class Transaction {
         BigDecimal currentWarehouse = s.execute(QueryBuilder.select()
                 .from(Connector.keyspace, "warehouse")
                 .where(QueryBuilder.eq("W_ID", cwid))).one().getDecimal("W_YTD");
-        System.out.println("angekommen hier");
         s.execute(QueryBuilder.update(Connector.keyspace, "warehouse")
                 .with(QueryBuilder.set("W_YTD", payment.add(currentWarehouse)))
                 .where(QueryBuilder.eq("W_ID", cwid))
