@@ -559,6 +559,7 @@ public class Transaction {
         for(int cid2: allOtherCustomers){
             for(int o_id_customer: ordersByCustomer){
                 for(int o_id_other: ordersByOtherCustomers){
+                    System.out.println("hier");
                     for(int[] ol1: allOrderlines1){
                         for(int[] ol2: allOrderlines2){
                             for(int[] ol3: allOrderlines3){
