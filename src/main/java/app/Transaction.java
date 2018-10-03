@@ -556,7 +556,11 @@ public class Transaction {
 
         System.out.println("Customer: " + "wid: " + cwid + ",did: " + cdid + ",cid: "+ cid);
 
+        System.out.println("count: " + allOtherCustomers.size());
+        int i = 0;
         for(int cid2: allOtherCustomers){
+            System.out.println("customer " + i);
+            i++;
             for(int o_id_customer: ordersByCustomer){
                 
                 ResultSet OL_custumor = s.execute(QueryBuilder
@@ -595,11 +599,7 @@ public class Transaction {
 
                     ArrayList<Integer> OL_other_2 = new ArrayList<>(OL_other_1);
 
-                    System.out.println("count: " + OL_custumor_1.size());
-                    int i = 0;
                     for(int ol1: OL_custumor_1){
-                        System.out.println("hier: " + i);
-                        i++;
                         for(int ol2: OL_custumor_2){
                             for(int ol3: OL_other_1){
                                 for(int ol4: OL_other_2){
