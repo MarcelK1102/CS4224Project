@@ -488,7 +488,32 @@ public class Transaction {
 
         }
     }
+    //transaction 8
+    public static void relatedCustomer(int cwid, int cdid, int cid){
+        ResultSet S = s.execute(QueryBuilder
+                .select().all()
+                .from(Connector.keyspace, "customer")
+                .where(QueryBuilder.eq("C_W_ID", cwid))
+                .and(QueryBuilder.eq("C_D_ID", cdid))
+                .allowFiltering()
+        );
+        ResultSet O = s.execute(QueryBuilder
+                .select().all()
+                .from(Connector.keyspace, "orders")
+                .where(QueryBuilder.eq("O_W_ID", cwid))
+                .and(QueryBuilder.eq("O_D_ID", cdid))
+                .allowFiltering()
+        );
+        ArrayList<Integer> Customers = new ArrayList<>();
+        ArrayList<Integer> ordersByCustomer = new ArrayList<>();
+        Iterator<Row> it = S.iterator();
+        while(it.hasNext()) {
+            Row C = it.next();
+            if(C.getInt("C_ID")!=cid)
+                Customers.add(C.getInt("C_ID"));
+        }
 
+    }
     private static final Scanner sc = new Scanner(System.in);
     private static final Map<Character, Runnable> fs = new HashMap<>();
     static {
