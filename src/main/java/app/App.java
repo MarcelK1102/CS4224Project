@@ -10,13 +10,14 @@ public class App {
     static Session s = new Connector().connect();
 
     public static void main(String args[]){
+
+        BasicConfigurator.configure();
         try{
             Transaction.paymentTransaction(5,5,5, BigDecimal.valueOf(13));
         }
         catch (Exception e ){
             System.out.println(e.toString());
         }
-        BasicConfigurator.configure();
         try{
             Transaction.handleInput();
             Transaction.handleOutput();
