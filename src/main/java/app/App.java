@@ -12,10 +12,9 @@ public class App {
     public static void main(String args[]){
         try{
             Transaction.paymentTransaction(5,5,5, BigDecimal.valueOf(13));
-
         }
         catch (Exception e ){
-            System.out.println(e.getStackTrace());
+            System.out.println(e.toString());
         }
         BasicConfigurator.configure();
         try{
