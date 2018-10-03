@@ -566,12 +566,13 @@ public class Transaction {
                                     System.out.println("1");
                                     Row O_other = w.findOrder(cwid, cdid, o_id_other).orElseThrow(() -> new TransactionException("Unable to find Order with id:" + o_id_other));;
                                     System.out.println("2");
-                                    Row OL1 = w.findOrderLine(cwid, cdid, ol1[0], ol1[1]).orElseThrow(() -> new TransactionException("Unable to find Orderline with number:" + ol1[1]));
-                                    /*Row OL1 = s.execute(QueryBuilder.select().all()
+                                    //Row OL1 = w.findOrderLine(cwid, cdid, ol1[0], ol1[1]).orElseThrow(() -> new TransactionException("Unable to find Orderline with number:" + ol1[1]));
+                                    Row OL1 = s.execute(QueryBuilder.select().all()
                                     .from(Connector.keyspace, "order_line")
                                     .where(QueryBuilder.eq("OL_W_ID", cwid))
                                     .and(QueryBuilder.eq("OL_D_ID", cdid))
-                                    .and(QueryBuilder.eq("OL_O_ID", oid)));*/
+                                    .and(QueryBuilder.eq("OL_O_ID", ol1[0]))
+                                    .and(QueryBuilder.eq("OL_NUMBER", ol1[1]))).one();
 
                                     System.out.println("3");
                                     Row OL2 = w.findOrderLine(cwid, cdid, ol2[0], ol2[1]).orElseThrow(() -> new TransactionException("Unable to find Orderline with number:" + ol2[1]));
