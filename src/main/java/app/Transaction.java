@@ -354,10 +354,10 @@ public class Transaction {
     }
     //Transaction 2
     public static void paymentTransaction(int cwid, int cdid, int cid, BigDecimal payment) throws TransactionException {
+        System.out.println("angekommen hier");
         BigDecimal currentWarehouse = s.execute(QueryBuilder.select()
                 .from(Connector.keyspace, "warehouse")
                 .where(QueryBuilder.eq("W_ID", cwid))).one().getDecimal("W_YTD");
-        System.out.println("angekommen hier");
         s.execute(QueryBuilder.update(Connector.keyspace, "warehouse")
                 .with(QueryBuilder.set("W_YTD", payment.add(currentWarehouse)))
                 .where(QueryBuilder.eq("W_ID", cwid))
