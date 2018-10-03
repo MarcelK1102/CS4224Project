@@ -229,8 +229,9 @@ public class Transaction {
             .and(QueryBuilder.eq("O_CARRIER_ID", -1))
             .allowFiltering())
             .one().getInt(0);*/
+            System.out.println("District: "+districtNo);
 
-            //System.out.println("N: " +N);
+            
             ArrayList<Integer> oids = new ArrayList<>();
 
             ResultSet S = s.execute(QueryBuilder
@@ -239,7 +240,6 @@ public class Transaction {
             .where(QueryBuilder.eq("O_W_ID", wid))
             .and(QueryBuilder.eq("O_D_ID", districtNo))
             .allowFiltering());
-            //System.out.println("N: " +N);
 
             Iterator<Row> it = S.iterator();
             while(it.hasNext()){
@@ -253,6 +253,8 @@ public class Transaction {
                 N = Collections.min(oids);
             else
                 continue;
+
+            System.out.println("N: " +N);
 
             Row X;
             try {
