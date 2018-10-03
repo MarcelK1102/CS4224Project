@@ -219,18 +219,6 @@ public class Transaction {
     //transaction 3
     public static void processDelivery(int wid, int carrierid) throws TransactionException {
         for (int districtNo = 1; districtNo <= 10; districtNo++){
-            //System.out.println("district: " + districtNo);
-            //a)
-            /*int N = s.execute(QueryBuilder
-            .select().min("O_ID")
-            .from(Connector.keyspace, "orders")
-            .where(QueryBuilder.eq("O_W_ID", wid))
-            .and(QueryBuilder.eq("O_D_ID", districtNo))
-            .and(QueryBuilder.eq("O_CARRIER_ID", -1))
-            .allowFiltering())
-            .one().getInt(0);*/
-            System.out.println("District: "+districtNo);
-
             
             ArrayList<Integer> oids = new ArrayList<>();
 
@@ -254,8 +242,6 @@ public class Transaction {
             else
                 continue;
 
-            System.out.println("N: " +N);
-
             Row X;
             try {
                 X = w.findOrder(wid, districtNo, N)
@@ -268,7 +254,6 @@ public class Transaction {
             Row C = w.findCustomer(wid, districtNo, cid).orElseThrow(() -> new TransactionException("Unable to find customer with id:" + cid));
 
             //b)
-            System.out.println("district: " + districtNo + " :b");
             s.execute(QueryBuilder.update(Connector.keyspace, "orders")
             .with(QueryBuilder.set("O_CARRIER_ID", carrierid))
             .where(QueryBuilder.eq("O_W_ID", wid))
@@ -276,8 +261,6 @@ public class Transaction {
             .and(QueryBuilder.eq("O_ID", N)));
 
             //c)
-            System.out.println("district: " + districtNo + " :c");
-
             ResultSet orderlines = s.execute(QueryBuilder.select().all()
             .from(Connector.keyspace, "order_line")
             .where(QueryBuilder.eq("OL_W_ID",wid))
@@ -298,13 +281,8 @@ public class Transaction {
             }
 
             //d)
-            System.out.println("district: " + districtNo + " :d");
-
             int delivery_cnt = C.getInt("C_DELIVERY_CNT");
             BigDecimal c_balance = C.getDecimal("C_BALANCE");
-
-            System.out.println("delivercnt:" + delivery_cnt);
-            System.out.println("c_balance:" + c_balance.toString());
 
             BigDecimal B = s.execute(QueryBuilder.select()
             .sum("OL_AMOUNT")
@@ -314,16 +292,12 @@ public class Transaction {
             .allowFiltering())
             .one().getDecimal(0);
 
-            System.out.println("B:" + B.toString());
-
             s.execute(QueryBuilder.update(Connector.keyspace, "customer")
             .with(QueryBuilder.set("C_BALANCE", c_balance.add(B)))
             .and(QueryBuilder.set("C_DELIVERY_CNT", delivery_cnt+1))
             .where(QueryBuilder.eq("C_W_ID", wid))
             .and(QueryBuilder.eq("C_D_ID", districtNo))
             .and(QueryBuilder.eq("C_ID", cid)));
-            
-            System.out.println("district: " + districtNo + " finished");
         }
     }
 
