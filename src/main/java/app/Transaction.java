@@ -244,13 +244,13 @@ public class Transaction {
             Iterator<Row> it = S.iterator();
             System.out.println("test3"+ it.hasNext());
             while(it.hasNext()){
-                System.out.println("test in");
                 Row curr = it.next();
                 if (curr.getInt("O_CARRIER_ID")==0){
                     oids.add(curr.getInt("O_ID"));
                 }
             }
 
+            System.out.println("before min");
             int N = Collections.min(oids);
             System.out.println("test3");
 
