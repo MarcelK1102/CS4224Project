@@ -251,9 +251,11 @@ public class Transaction {
                     oids.add(curr.getInt("O_ID"));
                 }
             }
-
-            System.out.println("before min");
-            int N = Collections.min(oids);
+            int N;
+            if (!oids.isEmpty())
+                N = Collections.min(oids);
+            else
+                continue;
             System.out.println("test3");
 
 
