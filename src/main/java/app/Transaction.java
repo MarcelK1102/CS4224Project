@@ -535,7 +535,7 @@ public class Transaction {
                 ordersByOtherCustomers.add(C.getInt("O_ID"));
         }
 
-        ResultSet OL = s.execute(QueryBuilder
+        /*ResultSet OL = s.execute(QueryBuilder
                 .select().all()
                 .from(Connector.keyspace, "order_line")
                 .where(QueryBuilder.eq("OL_W_ID", cwid))
@@ -552,32 +552,65 @@ public class Transaction {
 
         ArrayList<int[]> allOrderlines2 = new ArrayList<>(allOrderlines1);
         ArrayList<int[]> allOrderlines3 = new ArrayList<>(allOrderlines1);
-        ArrayList<int[]> allOrderlines4 = new ArrayList<>(allOrderlines1);
+        ArrayList<int[]> allOrderlines4 = new ArrayList<>(allOrderlines1);*/
 
         System.out.println("Customer: " + "wid: " + cwid + ",did: " + cdid + ",cid: "+ cid);
 
         for(int cid2: allOtherCustomers){
             for(int o_id_customer: ordersByCustomer){
+                
+                ResultSet OL_custumor = s.execute(QueryBuilder
+                        .select().all()
+                        .from(Connector.keyspace, "order_line")
+                        .where(QueryBuilder.eq("OL_W_ID", cwid))
+                        .and(QueryBuilder.eq("OL_D_ID", cdid))
+                        .and(QueryBuilder.eq("OL_O_ID", o_id_customer))
+                        .allowFiltering()
+                        );
+                ArrayList<Integer> OL_custumor_1 = new ArrayList<>();
+                Iterator<Row> it4 = OL_custumor.iterator();
+                while(it4.hasNext()) {
+                    Row C = it4.next();
+                    OL_custumor_1.add(C.getInt("OL_I_ID"));
+                }
+
+                ArrayList<Integer> OL_custumor_2 = new ArrayList<>(OL_custumor_1);
+
                 for(int o_id_other: ordersByOtherCustomers){
+                    
+                    ResultSet OL_other = s.execute(QueryBuilder
+                        .select().all()
+                        .from(Connector.keyspace, "order_line")
+                        .where(QueryBuilder.eq("OL_W_ID", cwid))
+                        .and(QueryBuilder.eq("OL_D_ID", cdid))
+                        .and(QueryBuilder.eq("OL_O_ID", o_id_other))
+                        .allowFiltering()
+                        );
+                    ArrayList<Integer> OL_other_1 = new ArrayList<>();
+                    Iterator<Row> it5 = OL_other.iterator();
+                    while(it5.hasNext()) {
+                        Row C = it5.next();
+                        OL_other_1.add(C.getInt("OL_I_ID"));
+                    }
+
+                    ArrayList<Integer> OL_other_2 = new ArrayList<>(OL_other_1);
+
                     System.out.println("hier");
-                    for(int[] ol1: allOrderlines1){
-                        for(int[] ol2: allOrderlines2){
+                    for(int ol1: OL_custumor_1){
+                        for(int ol2: OL_custumor_2){
                             System.out.println("hier2");
-                            for(int[] ol3: allOrderlines3){
+                            for(int ol3: OL_other_1){
                                 System.out.println("hier3");
-                                for(int[] ol4: allOrderlines4){
-                                    System.out.println("hier4");
+                                for(int ol4: OL_other_2){
                                     Row O_other = w.findOrder(cwid, cdid, o_id_other).orElseThrow(() -> new TransactionException("Unable to find Order with id:" + o_id_other));;
-                                    Row OL1 = w.findOrderLine(cwid, cdid, ol1[0], ol1[1]).orElseThrow(() -> new TransactionException("Unable to find Orderline with number:" + ol1[1]));
+                                    /*Row OL1 = w.findOrderLine(cwid, cdid, ol1[0], ol1[1]).orElseThrow(() -> new TransactionException("Unable to find Orderline with number:" + ol1[1]));
                                     Row OL2 = w.findOrderLine(cwid, cdid, ol2[0], ol2[1]).orElseThrow(() -> new TransactionException("Unable to find Orderline with number:" + ol2[1]));
                                     Row OL3 = w.findOrderLine(cwid, cdid, ol3[0], ol3[1]).orElseThrow(() -> new TransactionException("Unable to find Orderline with number:" + ol3[1]));
                                     Row OL4 = w.findOrderLine(cwid, cdid, ol4[0], ol4[1]).orElseThrow(() -> new TransactionException("Unable to find Orderline with number:" + ol4[1]));
-
-                                    if(O_other.getInt("O_C_ID") == cid2 
-                                    && OL1.getInt("OL_O_ID") == o_id_customer && OL2.getInt("OL_O_ID") == o_id_customer
-                                    && OL3.getInt("OL_O_ID") == o_id_other && OL4.getInt("OL_O_ID") == o_id_other
-                                    && OL1.getInt("OL_I_ID") != OL2.getInt("OL_I_ID") && OL3.getInt("OL_I_ID") != OL4.getInt("OL_I_ID")
-                                    && OL1.getInt("OL_I_ID") == OL3.getInt("OL_I_ID") && OL2.getInt("OL_I_ID") == OL4.getInt("OL_I_ID")){
+                                    */
+                                    if(O_other.getInt("O_C_ID") == cid2
+                                    && ol1 != ol2 && ol3 != ol4
+                                    && ol1 == ol3 && ol2 == ol4){
                                         System.out.println("Related Customer: " + cid2);
                                     }
                                 }
