@@ -566,6 +566,7 @@ public class Transaction {
                             for(int[] ol3: allOrderlines3){
                                 System.out.println("hier3");
                                 for(int[] ol4: allOrderlines4){
+                                    System.out.println("hier4");
                                     Row O_other = w.findOrder(cwid, cdid, o_id_other).orElseThrow(() -> new TransactionException("Unable to find Order with id:" + o_id_other));;
                                     Row OL1 = w.findOrderLine(cwid, cdid, ol1[0], ol1[1]).orElseThrow(() -> new TransactionException("Unable to find Orderline with number:" + ol1[1]));
                                     Row OL2 = w.findOrderLine(cwid, cdid, ol2[0], ol2[1]).orElseThrow(() -> new TransactionException("Unable to find Orderline with number:" + ol2[1]));
