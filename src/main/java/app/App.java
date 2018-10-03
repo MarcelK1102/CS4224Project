@@ -14,9 +14,10 @@ public class App {
         BasicConfigurator.configure();
         try{
             Transaction.set(s);
-            Transaction.paymentTransaction(5,5,5, BigDecimal.valueOf(13));
-            Transaction.getOrderStatus(5,5,1306);
-            Transaction.processDelivery(5,7);
+            //Transaction.paymentTransaction(5,5,5, BigDecimal.valueOf(13));
+            //Transaction.getOrderStatus(5,5,1306);
+            //Transaction.processDelivery(5,7);
+            Transaction.popularItem(5,5,1005);
         }
         catch (Exception e ){
             System.out.println(e.toString());
