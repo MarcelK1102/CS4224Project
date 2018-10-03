@@ -245,6 +245,7 @@ public class Transaction {
             System.out.println("test3"+ it.hasNext());
             while(it.hasNext()){
                 Row curr = it.next();
+                System.out.println("Id: "+ curr.getInt("O_CARRIER_ID"));
                 if (curr.getInt("O_CARRIER_ID")==0){
                     oids.add(curr.getInt("O_ID"));
                 }
