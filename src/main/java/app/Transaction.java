@@ -384,15 +384,15 @@ public class Transaction {
         Row district = w.findDistrict(cwid,cdid).orElseThrow(() -> new TransactionException("Unable to find customer with id:" + cid));
 
         System.out.println("C_W_ID: " + cwid + " C_D_ID: " + cdid + " C_ID: " + cid );
-        System.out.println("Name: " + C.getString("C_FIRST") + C.getString("C_MIDDLE") + C.getString("C_LAST"));
-        System.out.println("Adress: " + C.getString("C_STREET_1") + C.getString("C_STREET_2") + C.getString("C_CITY")
-                            + C.getString("C_STATE") + C.getString("C_ZIP") + C.getString("C_PHONE"));
-        //restliche Customer informationen einfügen
-        //
-        //
-        //
-        System.out.println("Warehouse: " + wa.getString("W_STREET_1") + wa.getString("W_STREET_2") + wa.getString("W_CITY") + wa.getString("W_STATE") + wa.getString("W_ZIP"));
-        System.out.println("District: " + district.getString("D_STREET_1") + district.getString("D_STREET_2") + district.getString("D_CITY") + district.getString("D_STATE") + district.getString("D_ZIP"));
+        System.out.println("Name: " + C.getString("C_FIRST") +" " + C.getString("C_MIDDLE") + " "+ C.getString("C_LAST"));
+        System.out.println("Adress: " + C.getString("C_STREET_1") +" "+ C.getString("C_STREET_2") + " "+ C.getString("C_CITY") + " " +
+                             C.getString("C_STATE") +" " + C.getString("C_ZIP") );
+        System.out.println("Phone: " + C.getString("C_PHONE"));
+        System.out.println("Since: " + C.getTimestamp("C_SINCE"));
+        System.out.println("Credit Information: "+ C.getString("C_CREDIT") + " Limit: " + C.getDecimal("C_CREDIT_LIM") + " Discount: " + C.getDecimal("C_DISCOUNT") + " Balance: " C.getDecimal("C_BALANCE") );
+
+        System.out.println("Warehouse: " + wa.getString("W_STREET_1") + " " + wa.getString("W_STREET_2") +" " + wa.getString("W_CITY") +" "+ wa.getString("W_STATE") +" "+ wa.getString("W_ZIP"));
+        System.out.println("District: " + district.getString("D_STREET_1") + " "+ district.getString("D_STREET_2") +" "+ district.getString("D_CITY") +" "+ district.getString("D_STATE") +" "+ district.getString("D_ZIP"));
         System.out.println("Payment: " + payment);
     }
     //Transaction 6
