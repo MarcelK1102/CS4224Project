@@ -470,7 +470,7 @@ public class Transaction {
             Row Order = w.findOrder(wid,did,o).orElseThrow(() -> new TransactionException("Unable to find Order with id:" + o));
             System.out.println("Order ID: " + o + " Date " + Order.getTimestamp("O_ENTRY_D"));
             Row Customer = w.findCustomer(wid,did,Order.getInt("O_C_ID")).orElseThrow(() -> new TransactionException("Unable to find Customer" ));
-            System.out.println("CName: " + Customer.getString("C_FIRST") + " " + Customer.getString("C_MIDDLE") + " " Customer.getString("C_LAST"));
+            System.out.println("CName: " + Customer.getString("C_FIRST") + " " + Customer.getString("C_MIDDLE") + " " +Customer.getString("C_LAST"));
             for(Integer i : popularItems.get(o)){
                 Row I = w.findItem(i).orElseThrow(() -> new TransactionException("Unable to find item with id:" + i));
                 System.out.println("Popular Item: " + I.getString("I_NAME") + " Quantity: " + popItemQuantity.get(i));
