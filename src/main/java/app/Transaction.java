@@ -595,11 +595,12 @@ public class Transaction {
 
                     ArrayList<Integer> OL_other_2 = new ArrayList<>(OL_other_1);
 
-                    System.out.println("hier");
+                    System.out.println("count: " + OL_custumor_1.size());
+                    int i = 0;
                     for(int ol1: OL_custumor_1){
-                        System.out.println("!!!!!!!!!!!!!!!!!!!HIER!!!!!!!!!!!!!!!!!!!");
+                        System.out.println("hier: " + i);
+                        i++;
                         for(int ol2: OL_custumor_2){
-                            System.out.println("hier2");
                             for(int ol3: OL_other_1){
                                 for(int ol4: OL_other_2){
                                     Row O_other = w.findOrder(cwid, cdid, o_id_other).orElseThrow(() -> new TransactionException("Unable to find Order with id:" + o_id_other));;
