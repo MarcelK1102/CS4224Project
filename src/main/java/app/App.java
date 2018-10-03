@@ -13,6 +13,7 @@ public class App {
 
         BasicConfigurator.configure();
         try{
+            System.out.println("hier angekommen");
             Transaction.paymentTransaction(5,5,5, BigDecimal.valueOf(13));
         }
         catch (Exception e ){
