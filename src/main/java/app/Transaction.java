@@ -489,6 +489,7 @@ public class Transaction {
     }
     //transaction 8
     public static void relatedCustomer(int cwid, int cdid, int cid) throws TransactionException {
+        System.out.println("1");
         ResultSet S = s.execute(QueryBuilder
                 .select().all()
                 .from(Connector.keyspace, "customer")
@@ -504,7 +505,7 @@ public class Transaction {
                 allOtherCustomers.add(C.getInt("C_ID"));
         }
 
-
+        System.out.println("2");
         ResultSet O = s.execute(QueryBuilder
                 .select().all()
                 .from(Connector.keyspace, "orders")
@@ -520,6 +521,7 @@ public class Transaction {
             ordersByCustomer.add(C.getInt("O_ID"));
         }
 
+        System.out.println("3");
         ResultSet O2 = s.execute(QueryBuilder
                 .select().all()
                 .from(Connector.keyspace, "orders")
@@ -535,6 +537,7 @@ public class Transaction {
                 ordersByOtherCustomers.add(C.getInt("O_ID"));
         }
 
+        System.out.println("4");
         ResultSet OL = s.execute(QueryBuilder
                 .select().all()
                 .from(Connector.keyspace, "order_line")
@@ -586,7 +589,7 @@ public class Transaction {
         System.out.println("finished");
 
     }
-    
+
     private static final Scanner sc = new Scanner(System.in);
     private static final Map<Character, Runnable> fs = new HashMap<>();
     static {
