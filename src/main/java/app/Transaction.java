@@ -489,7 +489,6 @@ public class Transaction {
     }
     //transaction 8
     public static void relatedCustomer(int cwid, int cdid, int cid) throws TransactionException {
-        System.out.println("1");
         ResultSet S = s.execute(QueryBuilder
                 .select().all()
                 .from(Connector.keyspace, "customer")
@@ -505,7 +504,7 @@ public class Transaction {
                 allOtherCustomers.add(C.getInt("C_ID"));
         }
 
-        System.out.println("2");
+
         ResultSet O = s.execute(QueryBuilder
                 .select().all()
                 .from(Connector.keyspace, "orders")
@@ -521,7 +520,6 @@ public class Transaction {
             ordersByCustomer.add(C.getInt("O_ID"));
         }
 
-        System.out.println("3");
         ResultSet O2 = s.execute(QueryBuilder
                 .select().all()
                 .from(Connector.keyspace, "orders")
@@ -537,7 +535,6 @@ public class Transaction {
                 ordersByOtherCustomers.add(C.getInt("O_ID"));
         }
 
-        System.out.println("4");
         ResultSet OL = s.execute(QueryBuilder
                 .select().all()
                 .from(Connector.keyspace, "order_line")
@@ -566,12 +563,18 @@ public class Transaction {
                         for(int[] ol2: allOrderlines2){
                             for(int[] ol3: allOrderlines3){
                                 for(int[] ol4: allOrderlines4){
+                                    System.out.println("1");
                                     Row O_other = w.findOrder(cwid, cdid, o_id_other).orElseThrow(() -> new TransactionException("Unable to find Order with id:" + o_id_other));;
+                                    System.out.println("2");
                                     Row OL1 = w.findOrderLine(cwid, cdid, ol1[0], ol1[1]).orElseThrow(() -> new TransactionException("Unable to find Orderline with number:" + ol1[1]));
+                                    System.out.println("3");
                                     Row OL2 = w.findOrderLine(cwid, cdid, ol2[0], ol2[1]).orElseThrow(() -> new TransactionException("Unable to find Orderline with number:" + ol2[1]));
+                                    System.out.println("4");
                                     Row OL3 = w.findOrderLine(cwid, cdid, ol3[0], ol3[1]).orElseThrow(() -> new TransactionException("Unable to find Orderline with number:" + ol3[1]));
+                                    System.out.println("5");
                                     Row OL4 = w.findOrderLine(cwid, cdid, ol4[0], ol4[1]).orElseThrow(() -> new TransactionException("Unable to find Orderline with number:" + ol4[1]));
-                                    
+                                    System.out.println("6");
+
                                     if(O_other.getInt("O_C_ID") == cid2 
                                     && OL1.getInt("OL_O_ID") == o_id_customer && OL2.getInt("OL_O_ID") == o_id_customer
                                     && OL3.getInt("OL_O_ID") == o_id_other && OL4.getInt("OL_O_ID") == o_id_other
