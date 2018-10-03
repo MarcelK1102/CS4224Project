@@ -231,7 +231,6 @@ public class Transaction {
             .one().getInt(0);*/
 
             //System.out.println("N: " +N);
-            System.out.println("test1");
             ArrayList<Integer> oids = new ArrayList<>();
 
             ResultSet S = s.execute(QueryBuilder
@@ -241,11 +240,11 @@ public class Transaction {
             .and(QueryBuilder.eq("O_D_ID", districtNo))
             .allowFiltering());
             //System.out.println("N: " +N);
-            System.out.println("test2");
-
 
             Iterator<Row> it = S.iterator();
+            System.out.println("test3"+ it.hasNext());
             while(it.hasNext()){
+                System.out.println("test in");
                 Row curr = it.next();
                 if (curr.getInt("O_CARRIER_ID")==0){
                     oids.add(curr.getInt("O_ID"));
