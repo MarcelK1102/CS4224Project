@@ -541,8 +541,8 @@ public class Transaction {
             int did = sc.nextInt();
             int cid = sc.nextInt();
             BigDecimal payment = sc.nextBigDecimal();
-            //TODO: implement payment
-            // t.payment(wid, did, cid, payment);
+            try { paymentTransaction(wid, did, cid, payment); }
+            catch(Exception e){ System.out.println("Unable to perform payment transaction failed with code: " + e); }
         });
 
         //Transaction (c)
