@@ -15,6 +15,7 @@ public class App {
         try{
             Transaction.set(s);
             Transaction.paymentTransaction(5,5,5, BigDecimal.valueOf(13));
+            Transaction.getOrderStatus(5,5,1306);
             Transaction.processDelivery(5,7);
         }
         catch (Exception e ){

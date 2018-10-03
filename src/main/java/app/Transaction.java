@@ -302,7 +302,7 @@ public class Transaction {
     }
 
     //Transaction 4
-    private static void getOrderStatus(int c_wid, int c_did, int cid) throws TransactionException {
+    public static void getOrderStatus(int c_wid, int c_did, int cid) throws TransactionException {
         //1.
         Row C = w.findCustomer(c_wid, c_did, cid).orElseThrow(() -> new TransactionException("Unable to find customer with id:" + cid));
         System.out.println(String.format("Name: %s %s %s",C.getString("C_FIRST"), C.getString("C_MIDDLE"), C.getString("C_LAST")));
