@@ -18,7 +18,8 @@ public class App {
             //Transaction.getOrderStatus(5,5,1306);
             //Transaction.processDelivery(5,7);
             //Transaction.popularItem(5,5,905);
-            Transaction.relatedCustomer(5, 5, 1);
+            // Transaction.relatedCustomer(5, 5, 1);
+            Transaction.relatedCustomer(1,1,1);
         }
         catch (Exception e ){
             System.out.println(e.toString());
