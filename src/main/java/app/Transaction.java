@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.sql.Date;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -216,20 +217,30 @@ public class Transaction {
     }
 
     //transaction 3
-    private static void processDelivery(int wid, int carrierid) throws TransactionException {
+    public static void processDelivery(int wid, int carrierid) throws TransactionException {
         for (int districtNo = 1; districtNo <= 10; districtNo++){
-            //System.out.println("district: " + districtNo);
-            //a)
-            int N = s.execute(QueryBuilder
-            .select().min("O_ID")
+            
+            ArrayList<Integer> oids = new ArrayList<>();
+
+            ResultSet S = s.execute(QueryBuilder
+            .select().all()
             .from(Connector.keyspace, "orders")
             .where(QueryBuilder.eq("O_W_ID", wid))
             .and(QueryBuilder.eq("O_D_ID", districtNo))
-            .and(QueryBuilder.eq("O_CARRIER_ID", -1))
-            .allowFiltering())
-            .one().getInt(0);
+            .allowFiltering());
 
-            //System.out.println("N: " +N);
+            Iterator<Row> it = S.iterator();
+            while(it.hasNext()){
+                Row curr = it.next();
+                if (curr.getInt("O_CARRIER_ID")==0){
+                    oids.add(curr.getInt("O_ID"));
+                }
+            }
+            int N;
+            if (!oids.isEmpty())
+                N = Collections.min(oids);
+            else
+                continue;
 
             Row X;
             try {
@@ -237,14 +248,12 @@ public class Transaction {
                         .orElseThrow(() -> new TransactionException("Unable to find order with id:" + N));
             } catch (TransactionException e) {
                 //skip if there is no order with id N
-                System.out.println("skipped");
                 continue;
             }
             int cid = X.getInt("O_C_ID");
             Row C = w.findCustomer(wid, districtNo, cid).orElseThrow(() -> new TransactionException("Unable to find customer with id:" + cid));
 
             //b)
-            //System.out.println("district: " + districtNo + " :b");
             s.execute(QueryBuilder.update(Connector.keyspace, "orders")
             .with(QueryBuilder.set("O_CARRIER_ID", carrierid))
             .where(QueryBuilder.eq("O_W_ID", wid))
@@ -252,17 +261,15 @@ public class Transaction {
             .and(QueryBuilder.eq("O_ID", N)));
 
             //c)
-            //System.out.println("district: " + districtNo + " :c");
-
             ResultSet orderlines = s.execute(QueryBuilder.select().all()
             .from(Connector.keyspace, "order_line")
             .where(QueryBuilder.eq("OL_W_ID",wid))
             .and(QueryBuilder.eq("OL_D_ID", districtNo))
             .and(QueryBuilder.eq("OL_O_ID", N)));
 
-            Iterator<Row> it = orderlines.iterator();
-            while(it.hasNext()){
-                Row currOL = it.next();
+            Iterator<Row> it2 = orderlines.iterator();
+            while(it2.hasNext()){
+                Row currOL = it2.next();
                 int OL_Number = currOL.getInt("OL_NUMBER");
 
                 s.execute(QueryBuilder.update(Connector.keyspace, "order_line")
@@ -274,13 +281,8 @@ public class Transaction {
             }
 
             //d)
-            //System.out.println("district: " + districtNo + " :d");
-
             int delivery_cnt = C.getInt("C_DELIVERY_CNT");
             BigDecimal c_balance = C.getDecimal("C_BALANCE");
-
-            //System.out.println("delivercnt:" + delivery_cnt);
-            //System.out.println("c_balance:" + c_balance.toString());
 
             BigDecimal B = s.execute(QueryBuilder.select()
             .sum("OL_AMOUNT")
@@ -290,21 +292,17 @@ public class Transaction {
             .allowFiltering())
             .one().getDecimal(0);
 
-            //System.out.println("B:" + B.toString());
-
             s.execute(QueryBuilder.update(Connector.keyspace, "customer")
             .with(QueryBuilder.set("C_BALANCE", c_balance.add(B)))
             .and(QueryBuilder.set("C_DELIVERY_CNT", delivery_cnt+1))
             .where(QueryBuilder.eq("C_W_ID", wid))
             .and(QueryBuilder.eq("C_D_ID", districtNo))
             .and(QueryBuilder.eq("C_ID", cid)));
-            
-            //System.out.println("district: " + districtNo + " finished");
         }
     }
 
     //Transaction 4
-    private static void getOrderStatus(int c_wid, int c_did, int cid) throws TransactionException {
+    public static void getOrderStatus(int c_wid, int c_did, int cid) throws TransactionException {
         //1.
         Row C = w.findCustomer(c_wid, c_did, cid).orElseThrow(() -> new TransactionException("Unable to find customer with id:" + cid));
         System.out.println(String.format("Name: %s %s %s",C.getString("C_FIRST"), C.getString("C_MIDDLE"), C.getString("C_LAST")));
@@ -357,7 +355,6 @@ public class Transaction {
         BigDecimal currentWarehouse = s.execute(QueryBuilder.select()
                 .from(Connector.keyspace, "warehouse")
                 .where(QueryBuilder.eq("W_ID", cwid))).one().getDecimal("W_YTD");
-
         s.execute(QueryBuilder.update(Connector.keyspace, "warehouse")
                 .with(QueryBuilder.set("W_YTD", payment.add(currentWarehouse)))
                 .where(QueryBuilder.eq("W_ID", cwid))
@@ -384,15 +381,15 @@ public class Transaction {
         Row district = w.findDistrict(cwid,cdid).orElseThrow(() -> new TransactionException("Unable to find customer with id:" + cid));
 
         System.out.println("C_W_ID: " + cwid + " C_D_ID: " + cdid + " C_ID: " + cid );
-        System.out.println("Name: " + C.getString("C_FIRST") + C.getString("C_MIDDLE") + C.getString("C_LAST"));
-        System.out.println("Adress: " + C.getString("C_STREET_1") + C.getString("C_STREET_2") + C.getString("C_CITY")
-                            + C.getString("C_STATE") + C.getString("C_ZIP") + C.getString("C_PHONE"));
-        //restliche Customer informationen einfügen
-        //
-        //
-        //
-        System.out.println("Warehouse: " + wa.getString("W_STREET_1") + wa.getString("W_STREET_2") + wa.getString("W_CITY") + wa.getString("W_STATE") + wa.getString("W_ZIP"));
-        System.out.println("District: " + district.getString("D_STREET_1") + district.getString("D_STREET_2") + district.getString("D_CITY") + district.getString("D_STATE") + district.getString("D_ZIP"));
+        System.out.println("Name: " + C.getString("C_FIRST") +" " + C.getString("C_MIDDLE") + " "+ C.getString("C_LAST"));
+        System.out.println("Adress: " + C.getString("C_STREET_1") +" "+ C.getString("C_STREET_2") + " "+ C.getString("C_CITY") + " " +
+                             C.getString("C_STATE") +" " + C.getString("C_ZIP") );
+        System.out.println("Phone: " + C.getString("C_PHONE"));
+        System.out.println("Since: " + C.getTimestamp("C_SINCE"));
+        System.out.println("Credit Information: "+ C.getString("C_DREDIT") + " Limit: " + C.getDecimal("C_CREDIT_LIM") + " Discount: " + C.getDecimal("C_DISCOUNT") + " Balance: " + C.getDecimal("C_BALANCE") );
+
+        System.out.println("Warehouse: " + wa.getString("W_STREET_1") + " " + wa.getString("W_STREET_2") +" " + wa.getString("W_CITY") +" "+ wa.getString("W_STATE") +" "+ wa.getString("W_ZIP"));
+        System.out.println("District: " + district.getString("D_STREET_1") + " "+ district.getString("D_STREET_2") +" "+ district.getString("D_CITY") +" "+ district.getString("D_STATE") +" "+ district.getString("D_ZIP"));
         System.out.println("Payment: " + payment);
     }
     //Transaction 6
@@ -472,9 +469,11 @@ public class Transaction {
         for(Integer o : orders ){
             Row Order = w.findOrder(wid,did,o).orElseThrow(() -> new TransactionException("Unable to find Order with id:" + o));
             System.out.println("Order ID: " + o + " Date " + Order.getTimestamp("O_ENTRY_D"));
-            System.out.println("CName: " + Order.getInt("O_C_ID"));
+            Row Customer = w.findCustomer(wid,did,Order.getInt("O_C_ID")).orElseThrow(() -> new TransactionException("Unable to find Customer" ));
+            System.out.println("CName: " + Customer.getString("C_FIRST") + " " + Customer.getString("C_MIDDLE") + " " +Customer.getString("C_LAST"));
             for(Integer i : popularItems.get(o)){
-                System.out.println("Popular Item: " + i + " Quantity: " + popItemQuantity.get(i));
+                Row I = w.findItem(i).orElseThrow(() -> new TransactionException("Unable to find item with id:" + i));
+                System.out.println("Popular Item: " + I.getString("I_NAME") + " Quantity: " + popItemQuantity.get(i));
                 int counter = 0;
                 for(Integer t : orders){
                     if(allItems.get(t)==null)
@@ -489,7 +488,7 @@ public class Transaction {
         }
     }
     //transaction 8
-    public static void relatedCustomer(int cwid, int cdid, int cid){
+    public static void relatedCustomer(int cwid, int cdid, int cid) throws TransactionException {
         ResultSet S = s.execute(QueryBuilder
                 .select().all()
                 .from(Connector.keyspace, "customer")
@@ -497,23 +496,135 @@ public class Transaction {
                 .and(QueryBuilder.eq("C_D_ID", cdid))
                 .allowFiltering()
         );
+        ArrayList<Integer> allOtherCustomers = new ArrayList<>();
+        Iterator<Row> it = S.iterator();
+        while(it.hasNext()) {
+            Row C = it.next();
+            if(C.getInt("C_ID")!=cid)
+                allOtherCustomers.add(C.getInt("C_ID"));
+        }
+
+
         ResultSet O = s.execute(QueryBuilder
+                .select().all()
+                .from(Connector.keyspace, "orders")
+                .where(QueryBuilder.eq("O_W_ID", cwid))
+                .and(QueryBuilder.eq("O_D_ID", cdid))
+                .and(QueryBuilder.eq("O_C_ID", cid))
+                .allowFiltering()
+        );
+        ArrayList<Integer> ordersByCustomer = new ArrayList<>();
+        Iterator<Row> it2 = O.iterator();
+        while(it2.hasNext()) {
+            Row C = it2.next();
+            ordersByCustomer.add(C.getInt("O_ID"));
+        }
+
+        ResultSet O2 = s.execute(QueryBuilder
                 .select().all()
                 .from(Connector.keyspace, "orders")
                 .where(QueryBuilder.eq("O_W_ID", cwid))
                 .and(QueryBuilder.eq("O_D_ID", cdid))
                 .allowFiltering()
         );
-        ArrayList<Integer> Customers = new ArrayList<>();
-        ArrayList<Integer> ordersByCustomer = new ArrayList<>();
-        Iterator<Row> it = S.iterator();
-        while(it.hasNext()) {
-            Row C = it.next();
-            if(C.getInt("C_ID")!=cid)
-                Customers.add(C.getInt("C_ID"));
+        ArrayList<Integer> ordersByOtherCustomers = new ArrayList<>();
+        Iterator<Row> it3 = O2.iterator();
+        while(it3.hasNext()) {
+            Row C = it3.next();
+            if (C.getInt("O_C_ID") != cid)
+                ordersByOtherCustomers.add(C.getInt("O_ID"));
         }
 
+        /*ResultSet OL = s.execute(QueryBuilder
+                .select().all()
+                .from(Connector.keyspace, "order_line")
+                .where(QueryBuilder.eq("OL_W_ID", cwid))
+                .and(QueryBuilder.eq("OL_D_ID", cdid))
+                .allowFiltering()
+        );
+        ArrayList<int[]> allOrderlines1 = new ArrayList<>();
+        Iterator<Row> it4 = OL.iterator();
+        while(it4.hasNext()) {
+            Row C = it4.next();
+            int[] ids = {C.getInt("OL_O_ID"), C.getInt("OL_NUMBER")};
+            allOrderlines1.add(ids);
+        }
+
+        ArrayList<int[]> allOrderlines2 = new ArrayList<>(allOrderlines1);
+        ArrayList<int[]> allOrderlines3 = new ArrayList<>(allOrderlines1);
+        ArrayList<int[]> allOrderlines4 = new ArrayList<>(allOrderlines1);*/
+
+        System.out.println("Customer: " + "wid: " + cwid + ",did: " + cdid + ",cid: "+ cid);
+
+        System.out.println("count: " + allOtherCustomers.size());
+        int i = 0;
+        for(int cid2: allOtherCustomers){
+            System.out.println("customer " + i);
+            i++;
+            for(int o_id_customer: ordersByCustomer){
+                
+                ResultSet OL_custumor = s.execute(QueryBuilder
+                        .select().all()
+                        .from(Connector.keyspace, "order_line")
+                        .where(QueryBuilder.eq("OL_W_ID", cwid))
+                        .and(QueryBuilder.eq("OL_D_ID", cdid))
+                        .and(QueryBuilder.eq("OL_O_ID", o_id_customer))
+                        .allowFiltering()
+                        );
+                ArrayList<Integer> OL_custumor_1 = new ArrayList<>();
+                Iterator<Row> it4 = OL_custumor.iterator();
+                while(it4.hasNext()) {
+                    Row C = it4.next();
+                    OL_custumor_1.add(C.getInt("OL_I_ID"));
+                }
+
+                ArrayList<Integer> OL_custumor_2 = new ArrayList<>(OL_custumor_1);
+
+                for(int o_id_other: ordersByOtherCustomers){
+                    
+                    ResultSet OL_other = s.execute(QueryBuilder
+                        .select().all()
+                        .from(Connector.keyspace, "order_line")
+                        .where(QueryBuilder.eq("OL_W_ID", cwid))
+                        .and(QueryBuilder.eq("OL_D_ID", cdid))
+                        .and(QueryBuilder.eq("OL_O_ID", o_id_other))
+                        .allowFiltering()
+                        );
+                    ArrayList<Integer> OL_other_1 = new ArrayList<>();
+                    Iterator<Row> it5 = OL_other.iterator();
+                    while(it5.hasNext()) {
+                        Row C = it5.next();
+                        OL_other_1.add(C.getInt("OL_I_ID"));
+                    }
+
+                    ArrayList<Integer> OL_other_2 = new ArrayList<>(OL_other_1);
+
+                    for(int ol1: OL_custumor_1){
+                        for(int ol2: OL_custumor_2){
+                            for(int ol3: OL_other_1){
+                                for(int ol4: OL_other_2){
+                                    Row O_other = w.findOrder(cwid, cdid, o_id_other).orElseThrow(() -> new TransactionException("Unable to find Order with id:" + o_id_other));;
+                                    /*Row OL1 = w.findOrderLine(cwid, cdid, ol1[0], ol1[1]).orElseThrow(() -> new TransactionException("Unable to find Orderline with number:" + ol1[1]));
+                                    Row OL2 = w.findOrderLine(cwid, cdid, ol2[0], ol2[1]).orElseThrow(() -> new TransactionException("Unable to find Orderline with number:" + ol2[1]));
+                                    Row OL3 = w.findOrderLine(cwid, cdid, ol3[0], ol3[1]).orElseThrow(() -> new TransactionException("Unable to find Orderline with number:" + ol3[1]));
+                                    Row OL4 = w.findOrderLine(cwid, cdid, ol4[0], ol4[1]).orElseThrow(() -> new TransactionException("Unable to find Orderline with number:" + ol4[1]));
+                                    */
+                                    if(O_other.getInt("O_C_ID") == cid2
+                                    && ol1 != ol2 && ol3 != ol4
+                                    && ol1 == ol3 && ol2 == ol4){
+                                        System.out.println("Related Customer: " + cid2);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        System.out.println("finished");
+
     }
+
     private static final Scanner sc = new Scanner(System.in);
     private static final Map<Character, Runnable> fs = new HashMap<>();
     static {
@@ -541,8 +652,8 @@ public class Transaction {
             int did = sc.nextInt();
             int cid = sc.nextInt();
             BigDecimal payment = sc.nextBigDecimal();
-            //TODO: implement payment
-            // t.payment(wid, did, cid, payment);
+            try { paymentTransaction(wid, did, cid, payment); }
+            catch(Exception e){ System.out.println("Unable to perform payment transaction failed with code: " + e); }
         });
 
         //Transaction (c)

@@ -214,6 +214,7 @@ public class Wrapper {
                 .where(QueryBuilder.eq("OL_W_ID", wid))
                 .and(QueryBuilder.eq("OL_D_ID", did))
                 .and(QueryBuilder.eq("OL_O_ID", oid))
+                .and(QueryBuilder.eq("OL_NUMBER", olid))
         ).one());    
     }
 
