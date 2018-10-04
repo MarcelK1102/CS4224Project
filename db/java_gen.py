@@ -80,13 +80,12 @@ for statement in buf.split(");"):
 			continue
 		columns[alpha.sub('',words[0])] = conv[alpha.sub('', words[1])]
 	if len(columns) <= 0:continue
-	f.write("public class {} {{\n".format(tablename))
-	f.write("\tRow r;\n")
+	f.write("public class {} extends tablebase{{\n".format(tablename))
 	for k,v in columns.items():
 		f.write("\tpublic {} {} = null;\n".format(v, k))
-	f.write("\tpublic final String names[] = new String[] {{{}}};\n".format(", ".join(['"%s"' % x for x in columns.keys()])))
-	f.write("\tpublic final Object values[] = new Object[] {{{}}};\n".format(", ".join( columns.keys() )))
-	f.write("\tpublic final int nkeys = {};\n".format(len(primarykeys)))
+	f.write("\tString names[] = new String[] {{{}}};\n".format(", ".join(['"%s"' % x for x in columns.keys()])))
+	f.write("\tObject values[] = new Object[] {{{}}};\n".format(", ".join( columns.keys() )))
+	f.write("\tint nkeys = {};\n".format(len(primarykeys)))
 	f.write("\tpublic {} () {{}}\n".format(tablename))
 	f.write("\tpublic {}({}) {{ {}; }}\n".format(tablename, 
 		', '.join(['%s %s' % (value, key) for key,value in columns.items()]),

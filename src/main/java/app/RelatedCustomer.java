@@ -1,15 +1,8 @@
 package app;
 
-import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.HashSet;
-
 import java.util.Iterator;
 
-import com.datastax.driver.core.BoundStatement;
-import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 
 public class RelatedCustomer {
