@@ -44,7 +44,7 @@ CREATE TABLE customer (
     C_ZIP VARCHAR,
     C_PHONE VARCHAR,
     C_SINCE TIMESTAMP,
-    C_DREDIT VARCHAR,
+    C_CREDIT VARCHAR,
     C_CREDIT_LIM DECIMAL,
     C_DISCOUNT DECIMAL,
     C_BALANCE DECIMAL,
@@ -54,6 +54,16 @@ CREATE TABLE customer (
     C_DATA VARCHAR,
     PRIMARY KEY( (C_D_ID), C_W_ID, C_ID)
 );
+
+create materialized view customer_by_balance
+as select C_BALANCE, C_ID, C_W_ID, C_D_ID
+from customer
+where C_BALANCE is not null
+and C_ID is not null
+and C_W_ID is not null
+and C_D_ID is not null
+primary key ((C_D_ID), C_BALANCE, C_ID, C_W_ID)
+with clustering order by (C_BALANCE DESC);
 
 CREATE TABLE orders ( 
     O_W_ID INT, 
@@ -131,15 +141,7 @@ CREATE TABLE stock (
     S_DIST_09 VARCHAR,
     S_DIST_10 VARCHAR,
     S_DATA VARCHAR,
-    PRIMARY KEY((S_I_ID, S_W_ID), S_QUANTITY)
+    PRIMARY KEY((S_I_ID, S_W_ID))
 );
 
-create materialized view customer_by_balance
-as select C_BALANCE, C_ID, C_W_ID, C_D_ID
-from customer
-where C_BALANCE is not null
-and C_ID is not null
-and C_W_ID is not null
-and C_D_ID is not null
-primary key ((C_D_ID), C_BALANCE, C_ID, C_W_ID)
-with clustering order by (C_BALANCE DESC);
+

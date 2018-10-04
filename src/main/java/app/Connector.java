@@ -9,6 +9,7 @@ public class Connector {
     private int port = 9042;
     public static String keyspace = "Warehouse";
     private String clusterName = "cs4224g";
+    private static Session s;
     private String contactPoints[] = {
         "192.168.48.249",
         "192.168.48.250",
@@ -27,9 +28,17 @@ public class Connector {
     }
 
     public Session connect(){
-        Session s = cluster.connect();
+        s = cluster.connect();
         s.execute("use " + keyspace + ";");
         return s;
+    }
+
+    public void close() {
+        if(s != null){
+            s.close();
+            s = null;
+        }
+        cluster.close();
     }
 
 }

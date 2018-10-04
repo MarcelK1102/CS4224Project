@@ -40,7 +40,7 @@ COPY customer (
     C_ZIP,
     C_PHONE,
     C_SINCE,
-    C_DREDIT,
+    C_CREDIT,
     C_CREDIT_LIM,
     C_DISCOUNT,
     C_BALANCE,
