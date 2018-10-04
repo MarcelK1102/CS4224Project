@@ -21,8 +21,6 @@ import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.driver.core.querybuilder.Select;
 
-import jnr.ffi.Struct.pid_t;
-
 public class Transaction {
 
     private static Session s;
@@ -33,6 +31,8 @@ public class Transaction {
         w = new Wrapper(s);
     }
 
+
+    //Task 2 take input
     public static void handleInput() {
         while(sc.hasNext()){
             fs.get((char) sc.nextByte()).run();
@@ -41,11 +41,11 @@ public class Transaction {
 
     //Task 4 output DB state:
     public static void handleOutput(){
-       for(Select q : outputQueries){
+        for(Select q : outputQueries){
             Row r = s.execute(q).one();
             System.out.println(r.getColumnDefinitions());
             System.out.println(r + "\n");
-       }
+        }
     }
 
     //Transaction 1
@@ -58,7 +58,7 @@ public class Transaction {
         //https://stackoverflow.com/questions/3935915/how-to-create-auto-increment-ids-in-cassandra/29391877#29391877
         //Step 2
         do{
-            N = r.getInt("D_NEXT_O_ID");
+            N = r.getInt("D_NEXT_O_ID") + 1;
             r = s.execute(QueryBuilder
                 .update("district")
                 .with(QueryBuilder.set("D_NEXT_O_ID", N))
@@ -97,7 +97,7 @@ public class Transaction {
                 //Step c
                 quantity.add(BigDecimal.valueOf(quantity.doubleValue() < 10.0 ? 100.0 : 0.0));
 
-                //Step f
+                //Step d
                 r = s.execute(QueryBuilder.update("stock")
                     .with(QueryBuilder.set("S_QUANTITY", quantity))
                     .and(QueryBuilder.set("S_YTD", r.getDecimal("S_YTD").add(BigDecimal.valueOf(quantities.get(i)))))
@@ -129,21 +129,26 @@ public class Transaction {
                 .value("OL_DIST_INFO","S_DIST_" + String.format("%02d", did))
             );
         }
+
         //Step 6
         BigDecimal wTax = w.findWarehouse(wid, "W_TAX").get().getDecimal(0);
         BigDecimal dTax = w.findDistrict(wid, did, "D_TAX").get().getDecimal(0);
         BigDecimal cDisc = w.findCustomer(wid, did, cid, "C_DISCOUNT").get().getDecimal(0);
         totalAmount = totalAmount.multiply(BigDecimal.ONE.add(dTax).add(wTax)).multiply(BigDecimal.ONE.subtract(cDisc));
+        
+        //Output:
+        //Step 1
+        System.out.println(w.findCustomer(wid, did, cid, "C_W_ID" , "D_W_ID", "C_ID", "C_LAST", "C_CREDIT", "C_DISCOUNT").get());
 
         //Step 2
-        System.out.println(wTax + " " + dTax);
+        System.out.println("W_TAX: " + wTax + ", D_TAX: " + dTax);
 
         //Step 3
         r = w.findOrder(wid, did, N, "O_ID", "O_ENTRY_ID").get();
         System.out.println(r);
 
         //Step 4
-        System.out.println(ids.size() + " " + totalAmount);
+        System.out.println("NUM_ITEMS: " + ids.size() + ", TOTAL_AMOUNT: " + totalAmount);
 
         //Step 5
         for(int i = 0; i < ids.size(); i++){
@@ -155,7 +160,7 @@ public class Transaction {
     }
 
     //Transaction 5
-    private static long stockLevel(int wid, int did, BigDecimal t, int l) throws TransactionException{
+    private static void stockLevel(int wid, int did, BigDecimal t, int l) throws TransactionException{
         //Step 1
         int N = w.findDistrict(wid, did, "D_NEXT_O_ID")
             .orElseThrow(() -> new TransactionException(String.format("Unable to find district with W_ID = %d and D_ID = %d", wid, did)))
@@ -172,13 +177,13 @@ public class Transaction {
             ).all().stream().mapToInt(r -> r.getInt(0)).boxed().collect(Collectors.toList());
 
         //Step 3
-        return s.execute(QueryBuilder
+        System.out.println(s.execute(QueryBuilder
             .select(QueryBuilder.count("S_I_ID"))
             .from("stock")
             .where(QueryBuilder.eq("S_W_ID", wid))
             .and(QueryBuilder.in("S_I_ID", itemids))
             .and(QueryBuilder.lt("S_QUANTITY", t))
-        ).one().getLong(0);
+        ).one());
     }
 
     //Transaction 7
@@ -655,7 +660,7 @@ public class Transaction {
     private static Select outputQueries[] = new Select[] {
         //4.a
         QueryBuilder
-            .select(QueryBuilder.sum("W_YTS"))
+            .select(QueryBuilder.sum("W_YTD"))
             .from("warehouse"),
 
         //4.b
@@ -673,12 +678,12 @@ public class Transaction {
                 .select(QueryBuilder.max("O_ID"), QueryBuilder.sum("O_OL_CNT"))
                 .from("orders"),
             
-        //4.e
+        //4.e - Times out at the moment...  
         QueryBuilder
                 .select(QueryBuilder.sum("OL_AMOUNT"), QueryBuilder.sum("OL_QUANTITY"))
                 .from("order_line"),
             
-        //4.f
+        //4.f - Times out at the moment...
         QueryBuilder
                 .select(QueryBuilder.sum("S_QUANTITY"), QueryBuilder.sum("S_YTD"), QueryBuilder.sum("S_ORDER_CNT"))
                 .from("stock")

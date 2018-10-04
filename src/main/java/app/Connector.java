@@ -2,6 +2,7 @@ package app;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.SocketOptions;
 
 public class Connector {
     private Cluster cluster;
@@ -21,6 +22,7 @@ public class Connector {
             .withClusterName(clusterName)
             .addContactPoints(contactPoints)
             .withPort(port)
+            .withSocketOptions(new SocketOptions().setReadTimeoutMillis(65000))
             .build();
     }
 
