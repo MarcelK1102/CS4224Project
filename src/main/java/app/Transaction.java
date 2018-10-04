@@ -310,20 +310,24 @@ public class Transaction {
         System.out.println("Balance: " + C.getDecimal("C_BALANCE"));
 
         //2.
-        Row lastOrder = s.execute(QueryBuilder.select().all()
-        .from(Connector.keyspace, "order_by_entry_date")
+        java.util.Date lastOrderDate = s.execute(QueryBuilder.select()
+        .min("O_ENTRY_D")
+        .from(Connector.keyspace, "orders")
         .where(QueryBuilder.eq("O_W_ID", c_wid))
         .and(QueryBuilder.eq("O_D_ID", c_did))
         .and(QueryBuilder.eq("O_C_ID", cid))
-        .limit(1)).one();
+        .allowFiltering()).one().getTimestamp(0);
+        if (lastOrderDate == null){
+            throw new TransactionException("No Order with valid timestamp found");
+        }
 
         //get Order Row
-        // Row lastOrder = s.execute(QueryBuilder.select().all()
-        // .from(Connector.keyspace, "orders")
-        // .where(QueryBuilder.eq("O_W_ID", c_wid))
-        // .and(QueryBuilder.eq("O_D_ID", c_did))
-        // .and(QueryBuilder.eq("O_ENTRY_D", lastOrderDate))
-        // .allowFiltering()).one();
+        Row lastOrder = s.execute(QueryBuilder.select().all()
+        .from(Connector.keyspace, "orders")
+        .where(QueryBuilder.eq("O_W_ID", c_wid))
+        .and(QueryBuilder.eq("O_D_ID", c_did))
+        .and(QueryBuilder.eq("O_ENTRY_D", lastOrderDate))
+        .allowFiltering()).one();
 
         int oid = lastOrder.getInt("O_ID");
         System.out.println("O_ID: " + oid);
@@ -510,7 +514,7 @@ public class Transaction {
         System.out.println("C_W_ID: " + cwid + " C_D_ID: " + cdid + " C_ID: "+ cid);
 
         Iterator<Row> orders = s.execute(QueryBuilder.select().all()
-            .from("orders")
+            .from("order_by_customer")
             .where(QueryBuilder.eq("O_C_ID", cid))
             .and(QueryBuilder.eq("O_W_ID", cwid))
             .and(QueryBuilder.eq("O_D_ID", cdid))).iterator();
@@ -527,15 +531,17 @@ public class Transaction {
             Map<Integer, Pair> oids = new HashMap<>();
             while(items.hasNext()){
                 Row item = items.next();
+                int itemId = item.getInt(0);
+                // System.out.println(item);
                 //for this item we need to find OL_O_ID that has the same item
-                List<Iterator<Row>> otherorders = new ArrayList<Iterator<Row>>(2);
-                otherorders.set(0, s.execute(QueryBuilder.select("OL_O_ID", "OL_W_ID", "OL_D_ID")
+                List<Iterator<Row>> otherorders = new ArrayList<Iterator<Row>>();
+                otherorders.add(s.execute(QueryBuilder.select("OL_O_ID", "OL_W_ID", "OL_D_ID")
                 .from("order_line_by_item")
                 .where(QueryBuilder.eq("OL_D_ID", cdid))
                 .and(QueryBuilder.eq("OL_I_ID", item.getInt("OL_I_ID")))
                 .and(QueryBuilder.gt("OL_W_ID", cwid))
                 ).iterator());
-                otherorders.set(1, s.execute(QueryBuilder.select("OL_O_ID")
+                otherorders.add(s.execute(QueryBuilder.select("OL_O_ID")
                     .from("order_line_by_item")
                     .where(QueryBuilder.eq("OL_D_ID", cdid))
                     .and(QueryBuilder.eq("OL_I_ID", item.getInt("OL_I_ID")))
@@ -546,11 +552,11 @@ public class Transaction {
                         Row orderO = otherorder.next();
                         Integer oloid = orderO.getInt("OL_O_ID");
                         if(!oids.containsKey(oloid))
-                            oids.put(oloid, new Pair(oloid, -1));
+                            oids.put(oloid, new Pair(itemId, -1));
                         else {
                             Pair p = oids.get(oloid);
-                            if(p.a != oloid && p.b < 0){
-                                p.b = oloid;
+                            if(p.a != itemId && p.b < 0){
+                                p.b = itemId;
                                 System.out.println("C_ID: " + s.execute(QueryBuilder.select("O_C_ID")
                                     .from("orders")
                                     .where(QueryBuilder.eq("O_W_ID", orderO.getInt("OL_W_ID")))
@@ -562,9 +568,6 @@ public class Transaction {
                 }
             }
         }
-        
-     
-
     }
 
     private static final Scanner sc = new Scanner(System.in);

@@ -1,4 +1,5 @@
-CREATE KEYSPACE IF NOT EXISTS Warehouse WITH replication = {'class': 'SimpleStrategy', 'replication_factor' : 3};
+drop keyspace if exists warehouse;
+CREATE KEYSPACE Warehouse WITH replication = {'class': 'SimpleStrategy', 'replication_factor' : 3};
 USE Warehouse;
 
 CREATE TABLE warehouse ( 
@@ -64,20 +65,16 @@ CREATE TABLE orders (
     O_ALL_LOCAL DECIMAL, 
     O_ENTRY_D TIMESTAMP,
     PRIMARY KEY((O_D_ID, O_W_ID), O_ID)
-    WITH CLUSTERING ORDER BY (O_ID asc)
-);
+) WITH CLUSTERING ORDER BY (O_ID asc);
 
-
-CREATE MATERIALIZED VIEW order_by_entry_date 
-as select O_W_ID, O_D_ID, O_ID, O_C_ID, O_ENTRY_D, O_CARRIER_ID
+CREATE MATERIALIZED VIEW order_by_customer 
+as select O_W_ID, O_D_ID, O_ID, O_C_ID
 from orders
 where O_W_ID is not null
 and O_D_ID is not null
 and O_ID is not null
 and O_C_ID is not null
-and O_ENTRY_D is not null
-primary key((O_W_ID, O_D_ID, O_C_ID), O_ENTRY_D, O_ID)
-with clustering order by (O_ENTRY_D asc)
+primary key ((O_W_ID, O_D_ID, O_C_ID), O_ID);
 
 
 CREATE TABLE item ( 
@@ -98,7 +95,7 @@ CREATE TABLE order_line (
     OL_DELIVERY_D TIMESTAMP, 
     OL_AMOUNT DECIMAL, 
     OL_SUPPLY_W_ID INT, 
- DECIMAL, 
+    OL_QUANTITY DECIMAL, 
     OL_DIST_INFO VARCHAR,
     PRIMARY KEY((OL_D_ID, OL_W_ID) , OL_O_ID, OL_NUMBER)
 );
@@ -112,7 +109,7 @@ and OL_D_ID is not null
 and OL_O_ID is not null
 and OL_NUMBER is not null
 and OL_I_ID is not null
-primary key ((OL_D_ID, OL_I_ID), OL_W_ID, OL_NUMBER, OL_O_ID)
+primary key ((OL_D_ID, OL_I_ID), OL_W_ID, OL_NUMBER, OL_O_ID);
 
 
 
