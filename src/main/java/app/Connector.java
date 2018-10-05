@@ -4,12 +4,14 @@ import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.SocketOptions;
 
+import app.wrapper.tablebase;
+
 public class Connector {
     private Cluster cluster;
     private int port = 9042;
     public static String keyspace = "Warehouse";
     private String clusterName = "cs4224g";
-    private static Session s;
+    public static Session s;
     private String contactPoints[] = {
         "192.168.48.249",
         "192.168.48.250",

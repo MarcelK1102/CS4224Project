@@ -10,10 +10,9 @@ public class App {
 
     public static void main(String args[]){
         BasicConfigurator.configure();
-        Transaction.set(s);
         try{
-            Transaction.handleInput();
-            Transaction.handleOutput();
+            // Transaction.handleInput();
+            // Transaction.handleOutput();
         } catch (Exception e){
             e.printStackTrace();
         } finally {

@@ -7,7 +7,6 @@ import java.math.BigDecimal;
 import java.sql.Date;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,13 +25,8 @@ import com.datastax.driver.core.querybuilder.Select;
 
 public class Transaction {
 
-    private static Session s;
+    private static Session s = Connector.s;
     private static Wrapper w;
-
-    public static void set(Session s){
-        Transaction.s = s;
-        w = new Wrapper(s);
-    }
 
     //Task 2 take input
     public static void handleInput() {
@@ -411,7 +405,7 @@ public class Transaction {
                              C.getString("C_STATE") +" " + C.getString("C_ZIP") );
         System.out.println("Phone: " + C.getString("C_PHONE"));
         System.out.println("Since: " + C.getTimestamp("C_SINCE"));
-        System.out.println("Credit Information: "+ C.getString("C_DREDIT") + " Limit: " + C.getDecimal("C_CREDIT_LIM") + " Discount: " + C.getDecimal("C_DISCOUNT") + " Balance: " + C.getDecimal("C_BALANCE") );
+        System.out.println("Credit Information: "+ C.getString("C_CREDIT") + " Limit: " + C.getDecimal("C_CREDIT_LIM") + " Discount: " + C.getDecimal("C_DISCOUNT") + " Balance: " + C.getDecimal("C_BALANCE") );
 
         System.out.println("Warehouse: " + wa.getString("W_STREET_1") + " " + wa.getString("W_STREET_2") +" " + wa.getString("W_CITY") +" "+ wa.getString("W_STATE") +" "+ wa.getString("W_ZIP"));
         System.out.println("District: " + district.getString("D_STREET_1") + " "+ district.getString("D_STREET_2") +" "+ district.getString("D_CITY") +" "+ district.getString("D_STATE") +" "+ district.getString("D_ZIP"));

@@ -12,12 +12,6 @@ public class Wrapper {
         this.s = s;
     }
 
-    public abstract class tablebase {
-        String names[];
-        Object values[];
-        int nkeys;
-    }  
-
     public Optional<Row> findWarehouse(int wid, String ... attr){
         return Optional.ofNullable(s.execute(
             (attr.length > 0 ? QueryBuilder.select(attr) : QueryBuilder.select().all())
