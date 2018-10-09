@@ -356,7 +356,7 @@ public class Transaction {
     
     //Transaction 2
     public static void paymentTransaction(int cwid, int cdid, int cid, BigDecimal payment) {
-        warehouse w = new warehouse(cwid);
+        warehouse w = new warehouse(cwid,"W_STREET_1","W_STREET_2","W_CITY","W_STATE","W_ZIP");
         BigDecimal oldYtd, oldBal;
         Float oldYtdPayment;
         Integer oldPayment;
@@ -367,7 +367,7 @@ public class Transaction {
             w.set_ytd(payment.add(w.ytd()));
         } while(!w.update(QueryBuilder.eq("W_YTD", oldYtd)));
 
-        district d = new district(cwid, cdid);
+        district d = new district(cwid, cdid,"D_STREET_1","D_STREET_2","D_CITY","D_STATE","D_ZIP");
         
         //Step 2
         do{
@@ -376,7 +376,8 @@ public class Transaction {
         } while(!d.update(QueryBuilder.eq("D_YTD", oldYtd)));
 
         //Step 3
-        customer c = new customer(cwid, cdid, cid);
+        customer c = new customer(cwid, cdid, cid,"C_FIRST","C_MIDDLE","C_LAST","C_STREET_1","C_STREET_2","C_CITY","C_STATE","C_ZIP","C_PHONE","C_SINCE","C_CREDIT","C_CREDIT_LIM","C_DISCOUNT","C_BALANCE" );
+        
         do {
             oldYtdPayment = c.ytdpayment();
             oldBal = c.balance();
@@ -390,19 +391,19 @@ public class Transaction {
         System.out.println(d);
         System.out.println(c);
         
-        // Row wa = Wrapper.findWarehouse(cwid);
-        // Row district = Wrapper.findDistrict(cwid,cdid);
-        // System.out.println("C_W_ID: " + cwid + " C_D_ID: " + cdid + " C_ID: " + cid );
-        // System.out.println("Name: " + C.getString("C_FIRST") +" " + C.getString("C_MIDDLE") + " "+ C.getString("C_LAST"));
-        // System.out.println("Adress: " + C.getString("C_STREET_1") +" "+ C.getString("C_STREET_2") + " "+ C.getString("C_CITY") + " " +
-        //                      C.getString("C_STATE") +" " + C.getString("C_ZIP") );
-        // System.out.println("Phone: " + C.getString("C_PHONE"));
-        // System.out.println("Since: " + C.getTimestamp("C_SINCE"));
-        // System.out.println("Credit Information: "+ C.getString("C_CREDIT") + " Limit: " + C.getDecimal("C_CREDIT_LIM") + " Discount: " + C.getDecimal("C_DISCOUNT") + " Balance: " + C.getDecimal("C_BALANCE") );
-
-        // System.out.println("Warehouse: " + wa.getString("W_STREET_1") + " " + wa.getString("W_STREET_2") +" " + wa.getString("W_CITY") +" "+ wa.getString("W_STATE") +" "+ wa.getString("W_ZIP"));
-        // System.out.println("District: " + district.getString("D_STREET_1") + " "+ district.getString("D_STREET_2") +" "+ district.getString("D_CITY") +" "+ district.getString("D_STATE") +" "+ district.getString("D_ZIP"));
-        // System.out.println("Payment: " + payment);
+        /* Row wa = Wrapper.findWarehouse(cwid);
+         Row district = Wrapper.findDistrict(cwid,cdid);
+         System.out.println("C_W_ID: " + cwid + " C_D_ID: " + cdid + " C_ID: " + cid );
+         System.out.println("Name: " + C.getString("C_FIRST") +" " + C.getString("C_MIDDLE") + " "+ C.getString("C_LAST"));
+         System.out.println("Adress: " + C.getString("C_STREET_1") +" "+ C.getString("C_STREET_2") + " "+ C.getString("C_CITY") + " " +
+                              C.getString("C_STATE") +" " + C.getString("C_ZIP") );
+         System.out.println("Phone: " + C.getString("C_PHONE"));
+         System.out.println("Since: " + C.getTimestamp("C_SINCE"));
+         System.out.println("Credit Information: "+ C.getString("C_CREDIT") + " Limit: " + C.getDecimal("C_CREDIT_LIM") + " Discount: " + C.getDecimal("C_DISCOUNT") + " Balance: " + C.getDecimal("C_BALANCE") );
+        */
+         //System.out.println("Warehouse: " + wa.getString("W_STREET_1") + " " + wa.getString("W_STREET_2") +" " + wa.getString("W_CITY") +" "+ wa.getString("W_STATE") +" "+ wa.getString("W_ZIP"));
+         //System.out.println("District: " + district.getString("D_STREET_1") + " "+ district.getString("D_STREET_2") +" "+ district.getString("D_CITY") +" "+ district.getString("D_STATE") +" "+ district.getString("D_ZIP"));
+         System.out.println("Payment: " + payment);
     }
 
     //Transaction 6
@@ -456,6 +457,7 @@ public class Transaction {
             if(max == null) {
                 max = BigDecimal.valueOf(0);
             }
+
             //"Select * from order_line_by_quantity where ..., QUANITYT >= MAX limit L" 
 
             ResultSet Items = Connector.s.execute(QueryBuilder
@@ -484,10 +486,12 @@ public class Transaction {
             orders.add(O_ID);
         }
         //O:step 3+4
-        //berechnung andern, namen von item und customer holenSSSS
         for(Integer o : orders ){
             //3.a
+            if(o!=5028)
+            continue;
             Row Order = Wrapper.findOrder(wid,did,o);
+            
             System.out.println("Order ID: " + o + " Date " + Order.getTimestamp("O_ENTRY_D"));
             //3.b
             Row Customer = Wrapper.findCustomer(wid,did,Order.getInt("O_C_ID"));

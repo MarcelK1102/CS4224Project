@@ -12,8 +12,11 @@ public class App {
         else
             Connector.connect(ConsistencyLevel.ONE);
         BasicConfigurator.configure();
+        
         try{
+            Transaction.popularItem(1, 1, 900);
             Transaction.handleInput();
+            
             // Transaction.handleOutput();
         } catch (Exception e){
             e.printStackTrace();
