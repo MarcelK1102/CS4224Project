@@ -1,5 +1,6 @@
 package app.wrapper;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 import com.datastax.driver.core.ColumnDefinitions.Definition;
 import com.datastax.driver.core.Row;
@@ -19,15 +20,27 @@ public abstract class tablebase {
 	final int nkeys;
 	final Map<String, Integer> namesi;
 	Object values[];
+	public boolean initialized = false;
 
-	public tablebase(String tablename, String names[], Map<String,Integer> namesi, int nkeys, Row r) {
+	public tablebase(String tablename, String names[], Map<String,Integer> namesi, int nkeys){
 		this.tablename = tablename; 
 		this.names = names; 
 		this.namesi = namesi; 
 		this.nkeys = nkeys; 
 		values = new Object[names.length];
+	}
+
+	public tablebase(String tablename, String names[], Map<String,Integer> namesi, int nkeys, Row r){
+		this(tablename, names, namesi, nkeys);
+	}
+
+	public void set(Row r){
+		if(r == null) return;
 		for(Definition d : r.getColumnDefinitions()){
-			values[namesi.get(d.getName())] = r.getObject(d.getName());
+			if(namesi.containsKey(d.getName())){
+				values[namesi.get(d.getName())] = r.getObject(d.getName());
+				initialized = true;
+			}
 		}
 	}
 

@@ -11,39 +11,40 @@ public class stock extends tablebase{
 	private static final Map<String,Integer> namesi;
 	static {namesi = new HashMap<String,Integer>();namesi.put("s_w_id",0);namesi.put("s_i_id",1);namesi.put("s_quantity",2);namesi.put("s_ytd",3);namesi.put("s_order_cnt",4);namesi.put("s_remote_cnt",5);namesi.put("s_dist_01",6);namesi.put("s_dist_02",7);namesi.put("s_dist_03",8);namesi.put("s_dist_04",9);namesi.put("s_dist_05",10);namesi.put("s_dist_06",11);namesi.put("s_dist_07",12);namesi.put("s_dist_08",13);namesi.put("s_dist_09",14);namesi.put("s_dist_10",15);namesi.put("s_data",16); }
 	public Integer s_w_id(){return (Integer)values[0];};
-	public void set_s_w_id(Integer value){values[0] = value;};
 	public Integer s_i_id(){return (Integer)values[1];};
-	public void set_s_i_id(Integer value){values[1] = value;};
 	public java.math.BigDecimal s_quantity(){return (java.math.BigDecimal)values[2];};
-	public void set_s_quantity(java.math.BigDecimal value){values[2] = value;};
 	public java.math.BigDecimal s_ytd(){return (java.math.BigDecimal)values[3];};
-	public void set_s_ytd(java.math.BigDecimal value){values[3] = value;};
 	public Integer s_order_cnt(){return (Integer)values[4];};
-	public void set_s_order_cnt(Integer value){values[4] = value;};
 	public Integer s_remote_cnt(){return (Integer)values[5];};
-	public void set_s_remote_cnt(Integer value){values[5] = value;};
 	public java.lang.String s_dist_01(){return (java.lang.String)values[6];};
-	public void set_s_dist_01(java.lang.String value){values[6] = value;};
 	public java.lang.String s_dist_02(){return (java.lang.String)values[7];};
-	public void set_s_dist_02(java.lang.String value){values[7] = value;};
 	public java.lang.String s_dist_03(){return (java.lang.String)values[8];};
-	public void set_s_dist_03(java.lang.String value){values[8] = value;};
 	public java.lang.String s_dist_04(){return (java.lang.String)values[9];};
-	public void set_s_dist_04(java.lang.String value){values[9] = value;};
 	public java.lang.String s_dist_05(){return (java.lang.String)values[10];};
-	public void set_s_dist_05(java.lang.String value){values[10] = value;};
 	public java.lang.String s_dist_06(){return (java.lang.String)values[11];};
-	public void set_s_dist_06(java.lang.String value){values[11] = value;};
 	public java.lang.String s_dist_07(){return (java.lang.String)values[12];};
-	public void set_s_dist_07(java.lang.String value){values[12] = value;};
 	public java.lang.String s_dist_08(){return (java.lang.String)values[13];};
-	public void set_s_dist_08(java.lang.String value){values[13] = value;};
 	public java.lang.String s_dist_09(){return (java.lang.String)values[14];};
-	public void set_s_dist_09(java.lang.String value){values[14] = value;};
 	public java.lang.String s_dist_10(){return (java.lang.String)values[15];};
-	public void set_s_dist_10(java.lang.String value){values[15] = value;};
 	public java.lang.String s_data(){return (java.lang.String)values[16];};
+	public void set_s_w_id(Integer value){values[0] = value;};
+	public void set_s_i_id(Integer value){values[1] = value;};
+	public void set_s_quantity(java.math.BigDecimal value){values[2] = value;};
+	public void set_s_ytd(java.math.BigDecimal value){values[3] = value;};
+	public void set_s_order_cnt(Integer value){values[4] = value;};
+	public void set_s_remote_cnt(Integer value){values[5] = value;};
+	public void set_s_dist_01(java.lang.String value){values[6] = value;};
+	public void set_s_dist_02(java.lang.String value){values[7] = value;};
+	public void set_s_dist_03(java.lang.String value){values[8] = value;};
+	public void set_s_dist_04(java.lang.String value){values[9] = value;};
+	public void set_s_dist_05(java.lang.String value){values[10] = value;};
+	public void set_s_dist_06(java.lang.String value){values[11] = value;};
+	public void set_s_dist_07(java.lang.String value){values[12] = value;};
+	public void set_s_dist_08(java.lang.String value){values[13] = value;};
+	public void set_s_dist_09(java.lang.String value){values[14] = value;};
+	public void set_s_dist_10(java.lang.String value){values[15] = value;};
 	public void set_s_data(java.lang.String value){values[16] = value;};
+	public stock () {super(tablename, names, namesi, nkeys);}
 	public stock (Row r) {super(tablename, names, namesi, nkeys, r);}
 	public stock (Integer s_i_id,Integer s_w_id, String ... attr) {this(Connector.s.execute(
 		(attr.length > 0 ? QueryBuilder.select(attr) : QueryBuilder.select())

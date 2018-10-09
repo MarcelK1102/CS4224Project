@@ -97,7 +97,9 @@ for statement in buf.split(");"):
 	f.write("\tstatic {{namesi = new HashMap<String,Integer>();{} }}\n".format("".join(['namesi.put("{}",{});'.format(k, i) for i, k in enumerate(columns.keys())])))
 	for i, (k,v) in enumerate(columns.items()):
 		f.write("\tpublic {} {}(){{return ({})values[{}];}};\n".format(v, k, v, i))
+	for i, (k,v) in enumerate(columns.items()):
 		f.write("\tpublic void set_{}({} value){{values[{}] = value;}};\n".format(k, v, i))
+	f.write('\tpublic {0} () {{super(tablename, names, namesi, nkeys);}}\n'.format(tablename))
 	f.write('\tpublic {0} (Row r) {{super(tablename, names, namesi, nkeys, r);}}\n'.format(tablename))
 	f.write('\tpublic {0} ({1}, String ... attr) {{this(Connector.s.execute(\n\t\t(attr.length > 0 ? QueryBuilder.select(attr) : QueryBuilder.select())\n\t\t.from("{0}")\n\t\t.where().{2})\n\t.one());}}\n'.format(
 		tablename, 
