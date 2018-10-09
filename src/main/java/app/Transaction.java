@@ -32,14 +32,20 @@ import app.wrapper.stock;
 import app.wrapper.warehouse;
 
 public class Transaction {
+    public static int nxact = 0;
+    public static long startTime;
+    public static long endTime;
     //Task 2 take input
     public static void handleInput() {
         try{
             char []buf = new char[2];
+            startTime = System.currentTimeMillis();
             while(bi.read(buf, 0, 2) > 0){
                 System.out.println(buf[0]);
                 fs.get(buf[0]).run();
+                nxact++;
             }
+            endTime = System.currentTimeMillis();
         }catch(IOException ioe){System.out.println("Unable to handle input: "); ioe.printStackTrace();}
         System.out.println("Ended input");
     }
@@ -51,6 +57,8 @@ public class Transaction {
             System.out.println(r.getColumnDefinitions());
             System.out.println(r + "\n");
         }
+        double timeSeconds = (endTime - startTime) / 1000.0;
+        System.out.println("number of transactions : " + nxact + ", total transaction execution time : " + timeSeconds + ", transaction throughput : " + ( ((double) nxact)/timeSeconds) );
     }
 
     //Transaction 1
