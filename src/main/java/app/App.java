@@ -7,8 +7,11 @@ public class App {
     public static void main(String args[]){
         Connector.connect();
         BasicConfigurator.configure();
+        
         try{
+            Transaction.popularItem(1, 1, 980);
             Transaction.handleInput();
+            
             // Transaction.handleOutput();
         } catch (Exception e){
             e.printStackTrace();

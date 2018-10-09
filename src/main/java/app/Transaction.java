@@ -449,6 +449,8 @@ public class Transaction {
             if(max == null) {
                 max = BigDecimal.valueOf(0);
             }
+
+            System.out.println("Hier maximum " + max);
             //"Select * from order_line_by_quantity where ..., QUANITYT >= MAX limit L" 
 
             ResultSet Items = Connector.s.execute(QueryBuilder
@@ -477,7 +479,6 @@ public class Transaction {
             orders.add(O_ID);
         }
         //O:step 3+4
-        //berechnung andern, namen von item und customer holenSSSS
         for(Integer o : orders ){
             //3.a
             Row Order = Wrapper.findOrder(wid,did,o);
