@@ -137,7 +137,7 @@ public class Transaction {
         System.out.println(new orders(wid, did, N, "O_ID", "O_ENTRY_D"));
 
         //Step 4
-        System.out.println("NUM_ITEMS: " + ids.size() + ", TOTAL_AMOUNT: " + totalAmount);
+        System.out.println("num_items : " + ids.size() + ", total_amount : " + totalAmount);
 
         //Step 5
         for(int i = 0; i < ids.size(); i++){
@@ -346,53 +346,53 @@ public class Transaction {
     
     //Transaction 2
     public static void paymentTransaction(int cwid, int cdid, int cid, BigDecimal payment) {
-        Row r = Connector.s.execute(QueryBuilder.select()
-                .from(Connector.keyspace, "warehouse")
-                .where(QueryBuilder.eq("W_ID", cwid))).one();       
+        warehouse w = new warehouse(cwid);
+        BigDecimal oldYtd, oldBal;
+        Float oldYtdPayment;
+        Integer oldPayment;
+        w.tax(); 
+        //Step 1      
         do {
-            BigDecimal currentWarehouse = r.getDecimal("W_YTD");
-            r = Connector.s.execute(QueryBuilder.update(Connector.keyspace, "warehouse")
-                    .with(QueryBuilder.set("W_YTD", payment.add(currentWarehouse)))
-                    .where(QueryBuilder.eq("W_ID", cwid))
-                    .onlyIf(QueryBuilder.eq("W_YTD", currentWarehouse))
-            ).one();
-        } while(!r.getBool(0));
+            oldYtd = w.ytd();
+            w.set_ytd(payment.add(w.ytd()));
+        } while(!w.update(QueryBuilder.eq("W_YTD", oldYtd)));
 
-        //TODO: add same structure as above
-        BigDecimal currentDistrict = Connector.s.execute(QueryBuilder.select()
-                .from(Connector.keyspace, "district")
-                .where(QueryBuilder.eq("D_W_ID", cwid))
-                .and(QueryBuilder.eq("D_ID",cdid))).one().getDecimal("D_YTD");
-        Connector.s.execute(QueryBuilder.update(Connector.keyspace, "district")
-                .with(QueryBuilder.set("D_YTD", payment.add(currentDistrict)))
-                .where(QueryBuilder.eq("D_W_ID", cwid))
-                .and(QueryBuilder.eq("D_ID",cdid))
-        );
+        district d = new district(cwid, cdid);
+        
+        //Step 2
+        do{
+            oldYtd = d.ytd();
+            d.set_ytd(payment.add(oldYtd));
+        } while(!d.update(QueryBuilder.eq("D_YTD", oldYtd)));
 
-        //TODO: Add only if clause for each of the values to set
-        Row C = Wrapper.findCustomer(cwid, cdid, cid);
-        Connector.s.execute(QueryBuilder.update(Connector.keyspace, "customer")
-                .with(QueryBuilder.set("C_BALANCE", C.getDecimal("C_BALANCE").subtract(payment)))
-                .and(QueryBuilder.set("C_YTD_PAYMENT", C.getFloat("C_YTD_PAYMENT")+payment.floatValue()))
-                .and(QueryBuilder.set("C_PAYMENT_CNT",C.getInt("C_PAYMENT_CNT")+1))
-                .where(QueryBuilder.eq("C_W_ID", cwid))
-                .and(QueryBuilder.eq("C_D_ID",cdid))
-                .and(QueryBuilder.eq("C_ID",cid))
-        );
-        Row wa = Wrapper.findWarehouse(cwid);
-        Row district = Wrapper.findDistrict(cwid,cdid);
+        //Step 3
+        customer c = new customer(cwid, cdid, cid);
+        do {
+            oldYtdPayment = c.ytdpayment();
+            oldBal = c.balance();
+            oldPayment = c.paymentcnt();
+            c.set_balance(oldBal.subtract(payment));
+            c.set_ytdpayment(oldYtdPayment + payment.floatValue());
+            c.set_paymentcnt(oldPayment + 1);
+        } while(!c.update(QueryBuilder.eq("C_BALANCE", oldBal), QueryBuilder.eq("C_YTD_PAYMENT", oldYtdPayment), QueryBuilder.eq("C_PAYMENT_CNT", oldPayment)));
+        
+        System.out.println(w);
+        System.out.println(d);
+        System.out.println(c);
+        
+        // Row wa = Wrapper.findWarehouse(cwid);
+        // Row district = Wrapper.findDistrict(cwid,cdid);
+        // System.out.println("C_W_ID: " + cwid + " C_D_ID: " + cdid + " C_ID: " + cid );
+        // System.out.println("Name: " + C.getString("C_FIRST") +" " + C.getString("C_MIDDLE") + " "+ C.getString("C_LAST"));
+        // System.out.println("Adress: " + C.getString("C_STREET_1") +" "+ C.getString("C_STREET_2") + " "+ C.getString("C_CITY") + " " +
+        //                      C.getString("C_STATE") +" " + C.getString("C_ZIP") );
+        // System.out.println("Phone: " + C.getString("C_PHONE"));
+        // System.out.println("Since: " + C.getTimestamp("C_SINCE"));
+        // System.out.println("Credit Information: "+ C.getString("C_CREDIT") + " Limit: " + C.getDecimal("C_CREDIT_LIM") + " Discount: " + C.getDecimal("C_DISCOUNT") + " Balance: " + C.getDecimal("C_BALANCE") );
 
-        System.out.println("C_W_ID: " + cwid + " C_D_ID: " + cdid + " C_ID: " + cid );
-        System.out.println("Name: " + C.getString("C_FIRST") +" " + C.getString("C_MIDDLE") + " "+ C.getString("C_LAST"));
-        System.out.println("Adress: " + C.getString("C_STREET_1") +" "+ C.getString("C_STREET_2") + " "+ C.getString("C_CITY") + " " +
-                             C.getString("C_STATE") +" " + C.getString("C_ZIP") );
-        System.out.println("Phone: " + C.getString("C_PHONE"));
-        System.out.println("Since: " + C.getTimestamp("C_SINCE"));
-        System.out.println("Credit Information: "+ C.getString("C_CREDIT") + " Limit: " + C.getDecimal("C_CREDIT_LIM") + " Discount: " + C.getDecimal("C_DISCOUNT") + " Balance: " + C.getDecimal("C_BALANCE") );
-
-        System.out.println("Warehouse: " + wa.getString("W_STREET_1") + " " + wa.getString("W_STREET_2") +" " + wa.getString("W_CITY") +" "+ wa.getString("W_STATE") +" "+ wa.getString("W_ZIP"));
-        System.out.println("District: " + district.getString("D_STREET_1") + " "+ district.getString("D_STREET_2") +" "+ district.getString("D_CITY") +" "+ district.getString("D_STATE") +" "+ district.getString("D_ZIP"));
-        System.out.println("Payment: " + payment);
+        // System.out.println("Warehouse: " + wa.getString("W_STREET_1") + " " + wa.getString("W_STREET_2") +" " + wa.getString("W_CITY") +" "+ wa.getString("W_STATE") +" "+ wa.getString("W_ZIP"));
+        // System.out.println("District: " + district.getString("D_STREET_1") + " "+ district.getString("D_STREET_2") +" "+ district.getString("D_CITY") +" "+ district.getString("D_STATE") +" "+ district.getString("D_ZIP"));
+        // System.out.println("Payment: " + payment);
     }
 
     //Transaction 6
@@ -654,8 +654,8 @@ public class Transaction {
             int wid = Integer.parseInt(input[0]);
             int did = Integer.parseInt(input[1]);
             int cid = Integer.parseInt(input[2]);
-            //TODO: implement Related-Customer Transaction
-            //t.relatedCustomer(wid, did, cid);
+            try{ relatedCustomer(wid, did, cid); }
+            catch(Exception e) { System.out.println("Unable to perform Related-Customer transaction, failed with code: " + e); }
         });
     }
 
