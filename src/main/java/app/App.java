@@ -9,7 +9,7 @@ public class App {
         BasicConfigurator.configure();
         
         try{
-            Transaction.popularItem(1, 1, 980);
+            Transaction.popularItem(1, 1, 930);
             Transaction.handleInput();
             
             // Transaction.handleOutput();
