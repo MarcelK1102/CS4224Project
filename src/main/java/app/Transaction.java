@@ -432,7 +432,7 @@ public class Transaction {
         //orderNumber -> popularItems
         HashMap<Integer, HashSet<Integer>> popularItems = new HashMap<>();
         //itemID -> Quantity
-        HashMap<Integer,BigDecimal> popItemQuantity = new HashMap<>();
+        HashMap<Pair,BigDecimal> popItemQuantity = new HashMap<>();
         while(it.hasNext()) {
             Row currentOrder = it.next();
             int O_ID = currentOrder.getInt("O_ID");
@@ -468,7 +468,7 @@ public class Transaction {
                 Row Item = it2.next();
                 items.add(Item.getInt("OL_I_ID"));
                 if(Item.getDecimal("OL_QUANTITY").equals(max)) {
-                    popItemQuantity.put(Item.getInt("OL_I_ID"),Item.getDecimal("OL_QUANTITY"));
+                    popItemQuantity.put(new Pair(O_ID,Item.getInt("OL_I_ID")),Item.getDecimal("OL_QUANTITY"));
                     popItems.add(Item.getInt("OL_I_ID"));
                 }
             }
@@ -491,7 +491,7 @@ public class Transaction {
             for(Integer i : popularItems.get(o)){
                 //4.a
                 Row I = Wrapper.findItem(i);
-                System.out.println("Popular Item: " + I.getString("I_NAME") + " Quantity: " + popItemQuantity.get(i));
+                System.out.println("Popular Item: " + I.getString("I_NAME") + " Quantity: " + popItemQuantity.get(new Pair(o,i)));
                 int counter = 0;
                 for(Integer t : orders){
                     if(allItems.get(t)==null)
