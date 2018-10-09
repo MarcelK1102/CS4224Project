@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
+import java.security.InvalidKeyException;
 import java.sql.Date;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -19,15 +20,18 @@ import java.util.stream.IntStream;
 
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
-import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.driver.core.querybuilder.Select;
 
+import app.wrapper.customer;
+import app.wrapper.district;
+import app.wrapper.item;
+import app.wrapper.order_line;
+import app.wrapper.orders;
+import app.wrapper.stock;
+import app.wrapper.warehouse;
+
 public class Transaction {
-
-    private static Session s = Connector.s;
-    private static Wrapper w;
-
     //Task 2 take input
     public static void handleInput() {
         try{
@@ -43,7 +47,7 @@ public class Transaction {
     //Task 4 output DB state:
     public static void handleOutput(){
         for(Select q : outputQueries){
-            Row r = s.execute(q).one();
+            Row r = Connector.s.execute(q).one();
             System.out.println(r.getColumnDefinitions());
             System.out.println(r + "\n");
         }
@@ -53,23 +57,18 @@ public class Transaction {
     private static void newOrder(int wid, int did, int cid, List<Integer> ids, List<Integer> wids, List<Integer> quantities ) throws NoSuchElementException{
         //Processing
         //Step 1
-        Row r = w.findDistrict(wid, did, "D_NEXT_O_ID").get();
-        int N;
-
+        district d = new district(wid, did, "D_NEXT_O_ID");
+        int N; 
+        
         //https://stackoverflow.com/questions/3935915/how-to-create-auto-increment-ids-in-cassandra/29391877#29391877
         //Step 2
         do{
-            N = r.getInt("D_NEXT_O_ID") + 1;
-            r = s.execute(QueryBuilder
-                .update("district")
-                .with(QueryBuilder.set("D_NEXT_O_ID", N))
-                .where(QueryBuilder.eq("D_W_ID", wid))
-                .and(QueryBuilder.eq("D_ID", did))
-                .onlyIf(QueryBuilder.eq("D_NEXT_O_ID", N-1))
-            ).one();
-        } while(!r.getBool(0));
+            N = d.nextoid() + 1;
+            d.set_nextoid(N);
+        } while(!d.update(QueryBuilder.eq("D_NEXT_O_ID", N-1)));
+
         //Step 3
-        s.execute((QueryBuilder.insertInto("orders")
+        Connector.s.execute((QueryBuilder.insertInto("orders")
                 .value("O_ID", N)
                 .value("O_D_ID", did)
                 .value("O_W_ID ", wid) 
@@ -80,45 +79,34 @@ public class Transaction {
         ));
 
         //Step 4
-        BigDecimal totalAmount = BigDecimal.ZERO;
+        BigDecimal totalAmount = BigDecimal.ZERO, oldquantity;
         
         //Step 5
         for(int i = 0; i < ids.size(); i++){
             int iid = ids.get(i);
-            while(true){
-                //Step a
-                r = w.findStock(wid, iid, "S_QUANTITY"," S_YTD"," S_ORDER_CNT"," S_REMOTE_CNT"," S_DIST_" + String.format("%02d", did)).get();
-                if(r == null){
-                    System.out.println("Unable to find stock for wid:" + wid + " iID = " + iid);
-                    continue;
-                }
+            //step a
+            stock stk = new stock(wid, iid,  "S_QUANTITY"," S_YTD"," S_ORDER_CNT"," S_REMOTE_CNT"," S_DIST_" + String.format("%02d", did)); 
+            do{
                 //Step b
-                BigDecimal quantity = r.getDecimal("S_QUANTITY").subtract(BigDecimal.valueOf(quantities.get(i)));
+                oldquantity = stk.quantity();
+                stk.set_quantity(oldquantity.subtract(BigDecimal.valueOf(quantities.get(i))));
                 
                 //Step c
-                quantity.add(BigDecimal.valueOf(quantity.doubleValue() < 10.0 ? 100.0 : 0.0));
+                stk.set_quantity(stk.quantity().add(BigDecimal.valueOf(stk.quantity().doubleValue() < 10.0 ? 100.0 : 0.0)));
 
-                //Step d
-                r = s.execute(QueryBuilder.update("stock")
-                    .with(QueryBuilder.set("S_QUANTITY", quantity))
-                    .and(QueryBuilder.set("S_YTD", r.getDecimal("S_YTD").add(BigDecimal.valueOf(quantities.get(i)))))
-                    .and(QueryBuilder.set("S_ORDER_CNT", r.getInt("S_ORDER_CNT") + 1))
-                    .and(QueryBuilder.set("S_REMOTE_CNT", r.getInt("S_REMOTE_CNT") + (wid != wids.get(i) ? 1 : 0)))
-                    .where(QueryBuilder.eq("S_I_ID", iid))
-                    .and(QueryBuilder.eq("S_W_ID", wid))
-                    .onlyIf(QueryBuilder.eq("S_QUANTITY", r.getDecimal(0)))
-                ).one();
-                if(r.getBool(0))
-                    break;
-            }
+                //Step d  
+                stk.set_ytd(stk.ytd().add(BigDecimal.valueOf(quantities.get(i))));
+                stk.set_ordercnt(stk.ordercnt() + 1);
+                stk.set_remotecnt(stk.remotecnt() + (wid != wids.get(i) ? 1 : 0));
+            } while(!stk.update(QueryBuilder.eq("S_QUANTITY", oldquantity)));
             //Step e
-            BigDecimal itemAmount = w.findItem(iid, "I_PRICE").get().getDecimal(0);
+            BigDecimal itemAmount = new item(iid, "I_PRICE").price();
             
             //Step f
             totalAmount = totalAmount.add(itemAmount);
             
             //Step g
-            s.execute(QueryBuilder.insertInto("order_line")
+            Connector.s.execute(QueryBuilder.insertInto("order_line")
                 .value("OL_O_ID", N)
                 .value("OL_D_ID", did)
                 .value("OL_W_ID", wid)
@@ -132,46 +120,40 @@ public class Transaction {
         }
 
         //Step 6
-        BigDecimal wTax = w.findWarehouse(wid, "W_TAX").get().getDecimal(0);
-        BigDecimal dTax = w.findDistrict(wid, did, "D_TAX").get().getDecimal(0);
-        BigDecimal cDisc = w.findCustomer(wid, did, cid, "C_DISCOUNT").get().getDecimal(0);
-        totalAmount = totalAmount.multiply(BigDecimal.ONE.add(dTax).add(wTax)).multiply(BigDecimal.ONE.subtract(cDisc));
+        warehouse w = new warehouse(wid, "W_TAX");
+        d = new district(wid, did, "D_TAX");
+        customer c = new customer(wid, did, cid, "C_W_ID" , "C_W_ID", "C_ID", "C_LAST", "C_CREDIT", "C_DISCOUNT");
+        totalAmount = totalAmount.multiply(BigDecimal.ONE.add(d.tax()).add(w.tax())).multiply(BigDecimal.ONE.subtract(c.discount()));
         
         //Output:
         //Step 1
-        System.out.println(w.findCustomer(wid, did, cid, "C_W_ID" , "C_W_ID", "C_ID", "C_LAST", "C_CREDIT", "C_DISCOUNT").get());
+        System.out.println(c);
 
         //Step 2
-        System.out.println("W_TAX: " + wTax + ", D_TAX: " + dTax);
+        System.out.println(w);
+        System.out.println(d);
 
         //Step 3
-        r = w.findOrder(wid, did, N, "O_ID", "O_ENTRY_D").get();
-        System.out.println(r);
+        System.out.println(new orders(wid, did, N, "O_ID", "O_ENTRY_D"));
 
         //Step 4
         System.out.println("NUM_ITEMS: " + ids.size() + ", TOTAL_AMOUNT: " + totalAmount);
 
         //Step 5
         for(int i = 0; i < ids.size(); i++){
-            String iName = w.findItem(ids.get(i), "I_NAME").get().getString(0);
-            System.out.println(iName);
-            BigDecimal olAmount = w.findOrderLine(wid, did, N, i+1, "OL_AMOUNT").get().getDecimal(0);
-            System.out.println(olAmount);
-            BigDecimal sQuantity = w.findStock(wid, ids.get(i), "S_QUANTITY").get().getDecimal(0);
-            System.out.println(sQuantity);
-            System.out.printf("%d %s %d %s %s %s\n", ids.get(i), iName, wids.get(0), quantities.get(0), olAmount, sQuantity);
+            System.out.println(new item(ids.get(i), "I_NAME"));
+            System.out.println(new order_line(wid, did, N, i+1, "OL_AMOUNT"));
+            System.out.println(new stock(wid, ids.get(i), "S_QUANTITY"));
         }
     }
 
     //Transaction 5
-    private static void stockLevel(int wid, int did, BigDecimal t, int l) throws TransactionException{
+    private static void stockLevel(int wid, int did, BigDecimal t, int l) {
         //Step 1
-        int N = w.findDistrict(wid, did, "D_NEXT_O_ID")
-            .orElseThrow(() -> new TransactionException(String.format("Unable to find district with W_ID = %d and D_ID = %d", wid, did)))
-            .getInt(0);
+        int N = Wrapper.findDistrict(wid, did, "D_NEXT_O_ID").getInt(0);
 
         //Step 2
-        List<Integer> itemids = s.execute(QueryBuilder
+        List<Integer> itemids = Connector.s.execute(QueryBuilder
                 .select("OL_I_ID")
                 .from("order_line")
                 .where(QueryBuilder.eq("OL_W_ID", wid))
@@ -181,7 +163,7 @@ public class Transaction {
             ).all().stream().mapToInt(r -> r.getInt(0)).boxed().collect(Collectors.toList());
 
         //Step 3
-        System.out.println(s.execute(QueryBuilder
+        System.out.println(Connector.s.execute(QueryBuilder
             .select(QueryBuilder.count("S_I_ID"))
             .from("stock")
             .where(QueryBuilder.eq("S_W_ID", wid))
@@ -196,7 +178,7 @@ public class Transaction {
         //processing: step 1
         IntStream.rangeClosed(1, 10).forEach(i -> {
             rows.addAll(
-                s.execute(QueryBuilder
+                Connector.s.execute(QueryBuilder
                     .select()
                     .from("customer_by_balance")
                     .where(QueryBuilder.eq("C_D_ID", i))
@@ -211,29 +193,31 @@ public class Transaction {
             .limit(10)
             .forEach(r ->{
                 //a
-                w.findCustomer(r.getInt("C_W_ID"), r.getInt("C_D_ID"), r.getInt("C_ID"), "C_FIRST", "C_MIDDLE", "C_LAST")
-                    .ifPresent(c -> System.out.printf("Name: %s %s %s, ", c.getString(0), c.getString(1), c.getString(2)));
+                Row c = Wrapper.findCustomer(r.getInt("C_W_ID"), r.getInt("C_D_ID"), r.getInt("C_ID"), "C_FIRST", "C_MIDDLE", "C_LAST");
+                System.out.printf("Name: %s %s %s, ", c.getString(0), c.getString(1), c.getString(2));
 
                 //b
                 System.out.printf("Balance: %s, ", r.getDecimal("C_BALANCE"));
 
                 //c
-                w.findWarehouse(r.getInt("C_W_ID"), "W_NAME").ifPresent(c -> System.out.printf("Warehouse name: %s, ", c.getString(0)));
+                c = Wrapper.findWarehouse(r.getInt("C_W_ID"), "W_NAME");
+                System.out.printf("Warehouse name: %s, ", c.getString(0));
 
                 //d
-                w.findDistrict(r.getInt("C_W_ID"), r.getInt("C_D_ID"), "D_NAME").ifPresent(c -> System.out.printf("District name: %s\n",  c.getString(0)));
+                c = Wrapper.findDistrict(r.getInt("C_W_ID"), r.getInt("C_D_ID"), "D_NAME");
+                System.out.printf("District name: %s\n",  c.getString(0));
 
             });
 
     }
 
     //transaction 3
-    public static void processDelivery(int wid, int carrierid) throws TransactionException {
+    public static void processDelivery(int wid, int carrierid) {
         for (int districtNo = 1; districtNo <= 10; districtNo++){
             
             ArrayList<Integer> oids = new ArrayList<>();
 
-            ResultSet S = s.execute(QueryBuilder
+            ResultSet S = Connector.s.execute(QueryBuilder
             .select().all()
             .from(Connector.keyspace, "orders")
             .where(QueryBuilder.eq("O_W_ID", wid))
@@ -254,24 +238,23 @@ public class Transaction {
 
             Row X;
             try {
-                X = w.findOrder(wid, districtNo, N)
-                        .orElseThrow(() -> new TransactionException("Unable to find order with id:" + N));
-            } catch (TransactionException e) {
+                X = Wrapper.findOrder(wid, districtNo, N);
+            } catch (NullPointerException e) {
                 //skip if there is no order with id N
                 continue;
             }
             int cid = X.getInt("O_C_ID");
-            Row C = w.findCustomer(wid, districtNo, cid).orElseThrow(() -> new TransactionException("Unable to find customer with id:" + cid));
+            Row C = Wrapper.findCustomer(wid, districtNo, cid);
 
             //b)
-            s.execute(QueryBuilder.update(Connector.keyspace, "orders")
+            Connector.s.execute(QueryBuilder.update(Connector.keyspace, "orders")
             .with(QueryBuilder.set("O_CARRIER_ID", carrierid))
             .where(QueryBuilder.eq("O_W_ID", wid))
             .and(QueryBuilder.eq("O_D_ID", districtNo))
             .and(QueryBuilder.eq("O_ID", N)));
 
             //c)
-            ResultSet orderlines = s.execute(QueryBuilder.select().all()
+            ResultSet orderlines = Connector.s.execute(QueryBuilder.select().all()
             .from(Connector.keyspace, "order_line")
             .where(QueryBuilder.eq("OL_W_ID",wid))
             .and(QueryBuilder.eq("OL_D_ID", districtNo))
@@ -282,7 +265,7 @@ public class Transaction {
                 Row currOL = it2.next();
                 int OL_Number = currOL.getInt("OL_NUMBER");
 
-                s.execute(QueryBuilder.update(Connector.keyspace, "order_line")
+                Connector.s.execute(QueryBuilder.update(Connector.keyspace, "order_line")
                 .with(QueryBuilder.set("OL_DELIVERY_D", Date.from(Instant.now())))
                 .where(QueryBuilder.eq("OL_W_ID",wid))
                 .and(QueryBuilder.eq("OL_D_ID", districtNo))
@@ -294,7 +277,7 @@ public class Transaction {
             int delivery_cnt = C.getInt("C_DELIVERY_CNT");
             BigDecimal c_balance = C.getDecimal("C_BALANCE");
 
-            BigDecimal B = s.execute(QueryBuilder.select()
+            BigDecimal B = Connector.s.execute(QueryBuilder.select()
             .sum("OL_AMOUNT") //Static column
             .from("order_line")
             .where(QueryBuilder.eq("OL_W_ID",wid))
@@ -302,7 +285,7 @@ public class Transaction {
             .and(QueryBuilder.eq("OL_D_ID", districtNo))
             ).one().getDecimal(0);
 
-            s.execute(QueryBuilder.update(Connector.keyspace, "customer")
+            Connector.s.execute(QueryBuilder.update(Connector.keyspace, "customer")
             .with(QueryBuilder.set("C_BALANCE", c_balance.add(B)))
             .and(QueryBuilder.set("C_DELIVERY_CNT", delivery_cnt+1))
             .where(QueryBuilder.eq("C_W_ID", wid))
@@ -312,14 +295,14 @@ public class Transaction {
     }
 
     //Transaction 4
-    public static void getOrderStatus(int c_wid, int c_did, int cid) throws TransactionException {
+    public static void getOrderStatus(int c_wid, int c_did, int cid) throws InvalidKeyException{
         //1.
-        Row C = w.findCustomer(c_wid, c_did, cid).orElseThrow(() -> new TransactionException("Unable to find customer with id:" + cid));
+        Row C = Wrapper.findCustomer(c_wid, c_did, cid);
         System.out.println(String.format("Name: %s %s %s",C.getString("C_FIRST"), C.getString("C_MIDDLE"), C.getString("C_LAST")));
         System.out.println("Balance: " + C.getDecimal("C_BALANCE"));
 
         //2.
-        java.util.Date lastOrderDate = s.execute(QueryBuilder.select()
+        java.util.Date lastOrderDate = Connector.s.execute(QueryBuilder.select()
         .min("O_ENTRY_D")
         .from(Connector.keyspace, "orders")
         .where(QueryBuilder.eq("O_W_ID", c_wid))
@@ -327,11 +310,11 @@ public class Transaction {
         .and(QueryBuilder.eq("O_C_ID", cid))
         .allowFiltering()).one().getTimestamp(0);
         if (lastOrderDate == null){
-            throw new TransactionException("No Order with valid timestamp found");
+            throw new InvalidKeyException("No Order with valid timestamp found");
         }
 
         //get Order Row
-        Row lastOrder = s.execute(QueryBuilder.select().all()
+        Row lastOrder = Connector.s.execute(QueryBuilder.select().all()
         .from(Connector.keyspace, "orders")
         .where(QueryBuilder.eq("O_W_ID", c_wid))
         .and(QueryBuilder.eq("O_D_ID", c_did))
@@ -344,7 +327,7 @@ public class Transaction {
         System.out.println("O_CARRIER_ID: " + lastOrder.getInt("O_CARRIER_ID"));
 
         //3.
-        ResultSet orderlines = s.execute(QueryBuilder.select().all()
+        ResultSet orderlines = Connector.s.execute(QueryBuilder.select().all()
             .from(Connector.keyspace, "order_line")
             .where(QueryBuilder.eq("OL_W_ID",c_wid))
             .and(QueryBuilder.eq("OL_D_ID", c_did))
@@ -362,13 +345,13 @@ public class Transaction {
     }
     
     //Transaction 2
-    public static void paymentTransaction(int cwid, int cdid, int cid, BigDecimal payment) throws TransactionException {
-        Row r = s.execute(QueryBuilder.select()
+    public static void paymentTransaction(int cwid, int cdid, int cid, BigDecimal payment) {
+        Row r = Connector.s.execute(QueryBuilder.select()
                 .from(Connector.keyspace, "warehouse")
                 .where(QueryBuilder.eq("W_ID", cwid))).one();       
         do {
             BigDecimal currentWarehouse = r.getDecimal("W_YTD");
-            r = s.execute(QueryBuilder.update(Connector.keyspace, "warehouse")
+            r = Connector.s.execute(QueryBuilder.update(Connector.keyspace, "warehouse")
                     .with(QueryBuilder.set("W_YTD", payment.add(currentWarehouse)))
                     .where(QueryBuilder.eq("W_ID", cwid))
                     .onlyIf(QueryBuilder.eq("W_YTD", currentWarehouse))
@@ -376,19 +359,19 @@ public class Transaction {
         } while(!r.getBool(0));
 
         //TODO: add same structure as above
-        BigDecimal currentDistrict = s.execute(QueryBuilder.select()
+        BigDecimal currentDistrict = Connector.s.execute(QueryBuilder.select()
                 .from(Connector.keyspace, "district")
                 .where(QueryBuilder.eq("D_W_ID", cwid))
                 .and(QueryBuilder.eq("D_ID",cdid))).one().getDecimal("D_YTD");
-        s.execute(QueryBuilder.update(Connector.keyspace, "district")
+        Connector.s.execute(QueryBuilder.update(Connector.keyspace, "district")
                 .with(QueryBuilder.set("D_YTD", payment.add(currentDistrict)))
                 .where(QueryBuilder.eq("D_W_ID", cwid))
                 .and(QueryBuilder.eq("D_ID",cdid))
         );
 
         //TODO: Add only if clause for each of the values to set
-        Row C = w.findCustomer(cwid, cdid, cid).orElseThrow(() -> new TransactionException("Unable to find customer with id:" + cid));
-        s.execute(QueryBuilder.update(Connector.keyspace, "customer")
+        Row C = Wrapper.findCustomer(cwid, cdid, cid);
+        Connector.s.execute(QueryBuilder.update(Connector.keyspace, "customer")
                 .with(QueryBuilder.set("C_BALANCE", C.getDecimal("C_BALANCE").subtract(payment)))
                 .and(QueryBuilder.set("C_YTD_PAYMENT", C.getFloat("C_YTD_PAYMENT")+payment.floatValue()))
                 .and(QueryBuilder.set("C_PAYMENT_CNT",C.getInt("C_PAYMENT_CNT")+1))
@@ -396,8 +379,8 @@ public class Transaction {
                 .and(QueryBuilder.eq("C_D_ID",cdid))
                 .and(QueryBuilder.eq("C_ID",cid))
         );
-        Row wa = w.findWarehouse(cwid).orElseThrow(() -> new TransactionException("Unable to find customer with id:" + cid));
-        Row district = w.findDistrict(cwid,cdid).orElseThrow(() -> new TransactionException("Unable to find customer with id:" + cid));
+        Row wa = Wrapper.findWarehouse(cwid);
+        Row district = Wrapper.findDistrict(cwid,cdid);
 
         System.out.println("C_W_ID: " + cwid + " C_D_ID: " + cdid + " C_ID: " + cid );
         System.out.println("Name: " + C.getString("C_FIRST") +" " + C.getString("C_MIDDLE") + " "+ C.getString("C_LAST"));
@@ -413,10 +396,10 @@ public class Transaction {
     }
 
     //Transaction 6
-    public static void popularItem(int wid, int did, int L)throws TransactionException{
-        //Row district = w.findDistrict(wid,did).orElseThrow(() -> new TransactionException("Unable to find customer with id:" + wid));
+    public static void popularItem(int wid, int did, int L) {
+        //Row district = Wrapper.findDistrict(wid,did).orElseThrow(() -> new TransactionException("Unable to find customer with id:" + wid));
         //P:Step 1
-        Row district = s.execute(QueryBuilder
+        Row district = Connector.s.execute(QueryBuilder
                 .select().all()
                 .from(Connector.keyspace, "district")
                 .where(QueryBuilder.eq("D_ID",did))
@@ -425,7 +408,7 @@ public class Transaction {
         int N = district.getInt("D_NEXT_O_ID");
         
         //P:Step 2
-        ResultSet S = s.execute(QueryBuilder
+        ResultSet S = Connector.s.execute(QueryBuilder
                 .select().all()
                 .from(Connector.keyspace, "orders")
                 .where(QueryBuilder.eq("O_D_ID",did))
@@ -452,7 +435,7 @@ public class Transaction {
             int O_ID = currentOrder.getInt("O_ID");
 
             //get max popularity
-            BigDecimal max = s.execute(QueryBuilder
+            BigDecimal max = Connector.s.execute(QueryBuilder
                     .select().max("OL_QUANTITY")
                     .from(Connector.keyspace, "order_line")
                     .where(QueryBuilder.eq("OL_D_ID", did))
@@ -465,7 +448,7 @@ public class Transaction {
             }
             //"Select * from order_line_by_quantity where ..., QUANITYT >= MAX limit L" 
 
-            ResultSet Items = s.execute(QueryBuilder
+            ResultSet Items = Connector.s.execute(QueryBuilder
                     .select().all()
                     .from(Connector.keyspace, "order_line")
                     .where(QueryBuilder.eq("OL_D_ID", did))
@@ -494,14 +477,14 @@ public class Transaction {
         //berechnung andern, namen von item und customer holenSSSS
         for(Integer o : orders ){
             //3.a
-            Row Order = w.findOrder(wid,did,o).orElseThrow(() -> new TransactionException("Unable to find Order with id:" + o));
+            Row Order = Wrapper.findOrder(wid,did,o);
             System.out.println("Order ID: " + o + " Date " + Order.getTimestamp("O_ENTRY_D"));
             //3.b
-            Row Customer = w.findCustomer(wid,did,Order.getInt("O_C_ID")).orElseThrow(() -> new TransactionException("Unable to find Customer" ));
+            Row Customer = Wrapper.findCustomer(wid,did,Order.getInt("O_C_ID"));
             System.out.println("CName: " + Customer.getString("C_FIRST") + " " + Customer.getString("C_MIDDLE") + " " +Customer.getString("C_LAST"));
             for(Integer i : popularItems.get(o)){
                 //4.a
-                Row I = w.findItem(i).orElseThrow(() -> new TransactionException("Unable to find item with id:" + i));
+                Row I = Wrapper.findItem(i);
                 System.out.println("Popular Item: " + I.getString("I_NAME") + " Quantity: " + popItemQuantity.get(i));
                 int counter = 0;
                 for(Integer t : orders){
@@ -518,11 +501,11 @@ public class Transaction {
     }
 
     //transaction 8
-    public static void relatedCustomer(int cwid, int cdid, int cid) throws TransactionException {
+    public static void relatedCustomer(int cwid, int cdid, int cid) {
         //Find all tuples in orders for this customer
         System.out.println("C_W_ID: " + cwid + " C_D_ID: " + cdid + " C_ID: "+ cid);
 
-        Iterator<Row> orders = s.execute(QueryBuilder.select().all()
+        Iterator<Row> orders = Connector.s.execute(QueryBuilder.select().all()
             .from("order_by_customer")
             .where(QueryBuilder.eq("O_C_ID", cid))
             .and(QueryBuilder.eq("O_W_ID", cwid))
@@ -531,7 +514,7 @@ public class Transaction {
         while(orders.hasNext()){
             Row order = orders.next();
             //Find all items for that order
-            Iterator<Row> items = s.execute(QueryBuilder.select("OL_I_ID")
+            Iterator<Row> items = Connector.s.execute(QueryBuilder.select("OL_I_ID")
                 .from("order_line")
                 .where(QueryBuilder.eq("OL_W_ID", cwid))
                 .and(QueryBuilder.eq("OL_D_ID", cdid))
@@ -544,13 +527,13 @@ public class Transaction {
                 // System.out.println(item);
                 //for this item we need to find OL_O_ID that has the same item
                 List<Iterator<Row>> otherorders = new ArrayList<Iterator<Row>>();
-                otherorders.add(s.execute(QueryBuilder.select("OL_O_ID", "OL_W_ID", "OL_D_ID")
+                otherorders.add(Connector.s.execute(QueryBuilder.select("OL_O_ID", "OL_W_ID", "OL_D_ID")
                 .from("order_line_by_item")
                 .where(QueryBuilder.eq("OL_D_ID", cdid))
                 .and(QueryBuilder.eq("OL_I_ID", item.getInt("OL_I_ID")))
                 .and(QueryBuilder.gt("OL_W_ID", cwid))
                 ).iterator());
-                otherorders.add(s.execute(QueryBuilder.select("OL_O_ID")
+                otherorders.add(Connector.s.execute(QueryBuilder.select("OL_O_ID")
                     .from("order_line_by_item")
                     .where(QueryBuilder.eq("OL_D_ID", cdid))
                     .and(QueryBuilder.eq("OL_I_ID", item.getInt("OL_I_ID")))
@@ -566,7 +549,7 @@ public class Transaction {
                             Pair p = oids.get(oloid);
                             if(p.a != itemId && p.b < 0){
                                 p.b = itemId;
-                                System.out.println("C_ID: " + s.execute(QueryBuilder.select("O_C_ID")
+                                System.out.println("C_ID: " + Connector.s.execute(QueryBuilder.select("O_C_ID")
                                     .from("orders")
                                     .where(QueryBuilder.eq("O_W_ID", orderO.getInt("OL_W_ID")))
                                     .and(QueryBuilder.eq("O_D_ID", orderO.getInt("OL_D_ID")))
@@ -676,7 +659,7 @@ public class Transaction {
         });
     }
 
-    private static Select outputQueries[] = new Select[] {
+    private static final Select outputQueries[] = new Select[] {
         //4.a
         QueryBuilder
             .select(QueryBuilder.sum("W_YTD"))

@@ -20,7 +20,6 @@ public abstract class tablebase {
 	final int nkeys;
 	final Map<String, Integer> namesi;
 	Object values[];
-	public boolean initialized = false;
 
 	public tablebase(String tablename, String names[], Map<String,Integer> namesi, int nkeys){
 		this.tablename = tablename; 
@@ -32,19 +31,18 @@ public abstract class tablebase {
 
 	public tablebase(String tablename, String names[], Map<String,Integer> namesi, int nkeys, Row r){
 		this(tablename, names, namesi, nkeys);
+		set(r);
 	}
 
 	public void set(Row r){
-		if(r == null) return;
 		for(Definition d : r.getColumnDefinitions()){
 			if(namesi.containsKey(d.getName())){
 				values[namesi.get(d.getName())] = r.getObject(d.getName());
-				initialized = true;
 			}
 		}
 	}
 
-	public Row update(Clause ...clauses){
+	public boolean update(Clause ...clauses){
 		Assignments a = QueryBuilder.update(tablename).with();
 		for(int i = nkeys; i < values.length; i++)
 			if(values[i] != null) 
@@ -59,6 +57,22 @@ public abstract class tablebase {
 			for(int i = 1; i < clauses.length; i++)
 				c.and(clauses[i]);
 		}
-		return s.execute(a).one();
+		Row r = s.execute(a).one();
+		if(r.getBool(0))
+			return true;
+		set(r);
+		return false;
+	}
+
+	public String toString(){
+		StringBuilder sb = new StringBuilder();
+		int j = 0;
+		for(int i = 0; i < values.length; i++){
+			if(values[i] == null) continue;
+			if(j > 0) sb.append(", ");
+			sb.append( names[i] + " : " + values[i] );
+			j++;
+		}
+		return sb.toString();
 	}
 }  

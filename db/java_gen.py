@@ -82,6 +82,11 @@ for statement in buf.split(");"):
 			continue
 		columns[alpha.sub('',words[0]).lower()] = conv[alpha.sub('', words[1])]
 	if len(columns) <= 0:continue
+	nkeys = len(primarykeys)
+	primarykeys = []
+	for i, k in enumerate(columns.keys()):
+		if i >= nkeys: break
+		primarykeys.append(k)
 	f = open("../src/main/java/app/wrapper/{}.java".format(tablename), "w", newline = '\n')
 	f.write("package app.wrapper;\n")
 	f.write("import java.util.HashMap;\n")
@@ -96,15 +101,16 @@ for statement in buf.split(");"):
 	f.write("\tprivate static final Map<String,Integer> namesi;\n")
 	f.write("\tstatic {{namesi = new HashMap<String,Integer>();{} }}\n".format("".join(['namesi.put("{}",{});'.format(k, i) for i, k in enumerate(columns.keys())])))
 	for i, (k,v) in enumerate(columns.items()):
-		f.write("\tpublic {} {}(){{return ({})values[{}];}};\n".format(v, k, v, i))
+		f.write("\tpublic {} {}(){{return ({})values[{}];}};\n".format(v, "".join(k.split('_')[1:]), v, i))
 	for i, (k,v) in enumerate(columns.items()):
-		f.write("\tpublic void set_{}({} value){{values[{}] = value;}};\n".format(k, v, i))
+		f.write("\tpublic void set_{}({} value){{values[{}] = value;}};\n".format("".join(k.split('_')[1:]), v, i))
 	f.write('\tpublic {0} () {{super(tablename, names, namesi, nkeys);}}\n'.format(tablename))
 	f.write('\tpublic {0} (Row r) {{super(tablename, names, namesi, nkeys, r);}}\n'.format(tablename))
-	f.write('\tpublic {0} ({1}, String ... attr) {{this(Connector.s.execute(\n\t\t(attr.length > 0 ? QueryBuilder.select(attr) : QueryBuilder.select())\n\t\t.from("{0}")\n\t\t.where().{2})\n\t.one());}}\n'.format(
+	f.write('\tpublic {0} ({1}, String ... attr) {{this(Connector.s.execute(\n\t\t(attr.length > 0 ? QueryBuilder.select(attr) : QueryBuilder.select())\n\t\t.from("{0}")\n\t\t.where().{2})\n\t.one());\n\t\t{3};}}\n'.format(
 		tablename, 
-		",".join(["{} {}".format(columns[k],k) for k in primarykeys]), 
-		'.'.join(['and(QueryBuilder.eq("{0}", {0}))'.format(k) for k in primarykeys]) ))
+		",".join(["{} {}".format(columns[k],"".join(k.split('_')[1:])) for k in primarykeys]), 
+		'.'.join(['and(QueryBuilder.eq("{0}", {1}))'.format(k, "".join(k.split('_')[1:])) for k in primarykeys]),
+		";".join(["set_{0}({0})".format("".join(k.split('_')[1:])) for k in primarykeys] )))
 	# f.write("\tpublic {}({}) {{ this(); {}; }}\n".format(tablename, 
 	# 	',\n\t\t'.join(['%s %s' % (value, key) for key,value in columns.items()]),
 	# 	';\n\t\t'.join(['this.%s = %s' % (key, key) for key,value in columns.items()])))
