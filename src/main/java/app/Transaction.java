@@ -244,7 +244,8 @@ public class Transaction {
                 continue;
             }
             int cid = X.getInt("O_C_ID");
-            Row C = Wrapper.findCustomer(wid, districtNo, cid);
+            customer c = new customer(wid, districtNo, cid);
+            // Row C = Wrapper.findCustomer(wid, districtNo, cid);
 
             //b)
             Connector.s.execute(QueryBuilder.update(Connector.keyspace, "orders")
@@ -274,23 +275,24 @@ public class Transaction {
             }
 
             //d)
-            int delivery_cnt = C.getInt("C_DELIVERY_CNT");
-            BigDecimal c_balance = C.getDecimal("C_BALANCE");
+            int old_cnt = c.deliverycnt();
+            BigDecimal c_balance = c.balance();
+
 
             BigDecimal B = Connector.s.execute(QueryBuilder.select()
-            .sum("OL_AMOUNT") //Static column
+            .sum("OL_AMOUNT")
             .from("order_line")
             .where(QueryBuilder.eq("OL_W_ID",wid))
             .and(QueryBuilder.eq("OL_O_ID", N))
             .and(QueryBuilder.eq("OL_D_ID", districtNo))
             ).one().getDecimal(0);
 
-            Connector.s.execute(QueryBuilder.update(Connector.keyspace, "customer")
-            .with(QueryBuilder.set("C_BALANCE", c_balance.add(B)))
-            .and(QueryBuilder.set("C_DELIVERY_CNT", delivery_cnt+1))
-            .where(QueryBuilder.eq("C_W_ID", wid))
-            .and(QueryBuilder.eq("C_D_ID", districtNo))
-            .and(QueryBuilder.eq("C_ID", cid)));//.onlyIf("TODO"));
+            do{
+                c_balance = c.balance();
+                old_cnt = c.deliverycnt();
+                c.set_balance(c_balance.add(B));
+                c.set_deliverycnt(old_cnt + 1);
+            } while(!c.update(QueryBuilder.eq("C_DELIVER_CNT", old_cnt)));
         }
     }
 
