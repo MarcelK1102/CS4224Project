@@ -450,7 +450,6 @@ public class Transaction {
                 max = BigDecimal.valueOf(0);
             }
 
-            System.out.println("Hier maximum " + max);
             //"Select * from order_line_by_quantity where ..., QUANITYT >= MAX limit L" 
 
             ResultSet Items = Connector.s.execute(QueryBuilder
@@ -482,8 +481,7 @@ public class Transaction {
         for(Integer o : orders ){
             //3.a
             Row Order = Wrapper.findOrder(wid,did,o);
-            if(o!=2800)
-                continue;
+            
             System.out.println("Order ID: " + o + " Date " + Order.getTimestamp("O_ENTRY_D"));
             //3.b
             Row Customer = Wrapper.findCustomer(wid,did,Order.getInt("O_C_ID"));
