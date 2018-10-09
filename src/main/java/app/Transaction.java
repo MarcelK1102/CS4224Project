@@ -154,72 +154,45 @@ public class Transaction {
             System.out.println(new stock(wid, ids.get(i), "S_QUANTITY"));
         }
     }
+    //Transaction 2
+    public static void paymentTransaction(int cwid, int cdid, int cid, BigDecimal payment) {
+        warehouse w = new warehouse(cwid,"W_STREET_1","W_STREET_2","W_CITY","W_STATE","W_ZIP");
+        BigDecimal oldYtd, oldBal;
+        Float oldYtdPayment;
+        Integer oldPayment;
+        w.tax(); 
+        //Step 1      
+        do {
+            oldYtd = w.ytd();
+            w.set_ytd(payment.add(w.ytd()));
+        } while(!w.update(QueryBuilder.eq("W_YTD", oldYtd)));
 
-    //Transaction 5
-    private static void stockLevel(int wid, int did, BigDecimal t, int l) {
-        //Step 1
-        int N = Wrapper.findDistrict(wid, did, "D_NEXT_O_ID").getInt(0);
-
+        district d = new district(cwid, cdid,"D_STREET_1","D_STREET_2","D_CITY","D_STATE","D_ZIP");
+        
         //Step 2
-        List<Integer> itemids = Connector.s.execute(QueryBuilder
-                .select("OL_I_ID")
-                .from("order_line")
-                .where(QueryBuilder.eq("OL_W_ID", wid))
-                .and(QueryBuilder.eq("OL_D_ID", did))
-                .and(QueryBuilder.gt("OL_O_ID", N-l))
-                .and(QueryBuilder.lte("OL_O_ID", N))
-            ).all().stream().mapToInt(r -> r.getInt(0)).boxed().collect(Collectors.toList());
+        do{
+            oldYtd = d.ytd();
+            d.set_ytd(payment.add(oldYtd));
+        } while(!d.update(QueryBuilder.eq("D_YTD", oldYtd)));
 
         //Step 3
-        System.out.println(Connector.s.execute(QueryBuilder
-            .select(QueryBuilder.count("S_I_ID"))
-            .from("stock")
-            .where(QueryBuilder.eq("S_W_ID", wid))
-            .and(QueryBuilder.in("S_I_ID", itemids))
-            .and(QueryBuilder.lt("S_QUANTITY", t))
-        ).one());
+        customer c = new customer(cwid, cdid, cid,"C_FIRST","C_MIDDLE","C_LAST","C_STREET_1","C_STREET_2","C_CITY","C_STATE","C_ZIP","C_PHONE","C_SINCE","C_CREDIT","C_CREDIT_LIM","C_DISCOUNT","C_BALANCE" );
+        
+        do {
+            oldYtdPayment = c.ytdpayment();
+            oldBal = c.balance();
+            oldPayment = c.paymentcnt();
+            c.set_balance(oldBal.subtract(payment));
+            c.set_ytdpayment(oldYtdPayment + payment.floatValue());
+            c.set_paymentcnt(oldPayment + 1);
+        } while(!c.update(QueryBuilder.eq("C_BALANCE", oldBal), QueryBuilder.eq("C_YTD_PAYMENT", oldYtdPayment), QueryBuilder.eq("C_PAYMENT_CNT", oldPayment)));
+        
+        System.out.println(w);
+        System.out.println(d);
+        System.out.println(c);
+        System.out.println("Payment: " + payment);
     }
-
-    //Transaction 7
-    private static void topBalance(){
-        List<Row> rows = new ArrayList<>(100);
-        //processing: step 1
-        IntStream.rangeClosed(1, 10).forEach(i -> {
-            rows.addAll(
-                Connector.s.execute(QueryBuilder
-                    .select()
-                    .from("customer_by_balance")
-                    .where(QueryBuilder.eq("C_D_ID", i))
-                    .limit(10)
-                ).all()
-            );
-        });
-
-        //Output: step 1
-        rows.stream()
-            .sorted((r1, r2) -> r2.getDecimal("C_BALANCE").compareTo(r1.getDecimal("C_BALANCE")))
-            .limit(10)
-            .forEach(r ->{
-                //a
-                Row c = Wrapper.findCustomer(r.getInt("C_W_ID"), r.getInt("C_D_ID"), r.getInt("C_ID"), "C_FIRST", "C_MIDDLE", "C_LAST");
-                System.out.printf("Name: %s %s %s, ", c.getString(0), c.getString(1), c.getString(2));
-
-                //b
-                System.out.printf("Balance: %s, ", r.getDecimal("C_BALANCE"));
-
-                //c
-                c = Wrapper.findWarehouse(r.getInt("C_W_ID"), "W_NAME");
-                System.out.printf("Warehouse name: %s, ", c.getString(0));
-
-                //d
-                c = Wrapper.findDistrict(r.getInt("C_W_ID"), r.getInt("C_D_ID"), "D_NAME");
-                System.out.printf("District name: %s\n",  c.getString(0));
-
-            });
-
-    }
-
-    //transaction 3
+    //Transaction 3
     public static void processDelivery(int wid, int carrierid) {
         for (int districtNo = 1; districtNo <= 10; districtNo++){
             
@@ -303,7 +276,6 @@ public class Transaction {
             } while(!c.update(QueryBuilder.eq("C_DELIVER_CNT", old_cnt)));
         }
     }
-
     //Transaction 4
     public static void getOrderStatus(int c_wid, int c_did, int cid) throws InvalidKeyException{
         //1.
@@ -353,59 +325,30 @@ public class Transaction {
             System.out.println("OL_DELIVERY_D:"  + currOL.getTimestamp("OL_DELIVERY_D"));
         }
     }
-    
-    //Transaction 2
-    public static void paymentTransaction(int cwid, int cdid, int cid, BigDecimal payment) {
-        warehouse w = new warehouse(cwid,"W_STREET_1","W_STREET_2","W_CITY","W_STATE","W_ZIP");
-        BigDecimal oldYtd, oldBal;
-        Float oldYtdPayment;
-        Integer oldPayment;
-        w.tax(); 
-        //Step 1      
-        do {
-            oldYtd = w.ytd();
-            w.set_ytd(payment.add(w.ytd()));
-        } while(!w.update(QueryBuilder.eq("W_YTD", oldYtd)));
+    //Transaction 5
+    private static void stockLevel(int wid, int did, BigDecimal t, int l) {
+        //Step 1
+        int N = Wrapper.findDistrict(wid, did, "D_NEXT_O_ID").getInt(0);
 
-        district d = new district(cwid, cdid,"D_STREET_1","D_STREET_2","D_CITY","D_STATE","D_ZIP");
-        
         //Step 2
-        do{
-            oldYtd = d.ytd();
-            d.set_ytd(payment.add(oldYtd));
-        } while(!d.update(QueryBuilder.eq("D_YTD", oldYtd)));
+        List<Integer> itemids = Connector.s.execute(QueryBuilder
+                .select("OL_I_ID")
+                .from("order_line")
+                .where(QueryBuilder.eq("OL_W_ID", wid))
+                .and(QueryBuilder.eq("OL_D_ID", did))
+                .and(QueryBuilder.gt("OL_O_ID", N-l))
+                .and(QueryBuilder.lte("OL_O_ID", N))
+            ).all().stream().mapToInt(r -> r.getInt(0)).boxed().collect(Collectors.toList());
 
         //Step 3
-        customer c = new customer(cwid, cdid, cid,"C_FIRST","C_MIDDLE","C_LAST","C_STREET_1","C_STREET_2","C_CITY","C_STATE","C_ZIP","C_PHONE","C_SINCE","C_CREDIT","C_CREDIT_LIM","C_DISCOUNT","C_BALANCE" );
-        
-        do {
-            oldYtdPayment = c.ytdpayment();
-            oldBal = c.balance();
-            oldPayment = c.paymentcnt();
-            c.set_balance(oldBal.subtract(payment));
-            c.set_ytdpayment(oldYtdPayment + payment.floatValue());
-            c.set_paymentcnt(oldPayment + 1);
-        } while(!c.update(QueryBuilder.eq("C_BALANCE", oldBal), QueryBuilder.eq("C_YTD_PAYMENT", oldYtdPayment), QueryBuilder.eq("C_PAYMENT_CNT", oldPayment)));
-        
-        System.out.println(w);
-        System.out.println(d);
-        System.out.println(c);
-        
-        /* Row wa = Wrapper.findWarehouse(cwid);
-         Row district = Wrapper.findDistrict(cwid,cdid);
-         System.out.println("C_W_ID: " + cwid + " C_D_ID: " + cdid + " C_ID: " + cid );
-         System.out.println("Name: " + C.getString("C_FIRST") +" " + C.getString("C_MIDDLE") + " "+ C.getString("C_LAST"));
-         System.out.println("Adress: " + C.getString("C_STREET_1") +" "+ C.getString("C_STREET_2") + " "+ C.getString("C_CITY") + " " +
-                              C.getString("C_STATE") +" " + C.getString("C_ZIP") );
-         System.out.println("Phone: " + C.getString("C_PHONE"));
-         System.out.println("Since: " + C.getTimestamp("C_SINCE"));
-         System.out.println("Credit Information: "+ C.getString("C_CREDIT") + " Limit: " + C.getDecimal("C_CREDIT_LIM") + " Discount: " + C.getDecimal("C_DISCOUNT") + " Balance: " + C.getDecimal("C_BALANCE") );
-        */
-         //System.out.println("Warehouse: " + wa.getString("W_STREET_1") + " " + wa.getString("W_STREET_2") +" " + wa.getString("W_CITY") +" "+ wa.getString("W_STATE") +" "+ wa.getString("W_ZIP"));
-         //System.out.println("District: " + district.getString("D_STREET_1") + " "+ district.getString("D_STREET_2") +" "+ district.getString("D_CITY") +" "+ district.getString("D_STATE") +" "+ district.getString("D_ZIP"));
-         System.out.println("Payment: " + payment);
+        System.out.println(Connector.s.execute(QueryBuilder
+            .select(QueryBuilder.count("S_I_ID"))
+            .from("stock")
+            .where(QueryBuilder.eq("S_W_ID", wid))
+            .and(QueryBuilder.in("S_I_ID", itemids))
+            .and(QueryBuilder.lt("S_QUANTITY", t))
+        ).one());
     }
-
     //Transaction 6
     public static void popularItem(int wid, int did, int L) {
         //Row district = Wrapper.findDistrict(wid,did).orElseThrow(() -> new TransactionException("Unable to find customer with id:" + wid));
@@ -512,8 +455,46 @@ public class Transaction {
 
         }
     }
+    //Transaction 7
+    private static void topBalance(){
+        List<Row> rows = new ArrayList<>(100);
+        //processing: step 1
+        IntStream.rangeClosed(1, 10).forEach(i -> {
+            rows.addAll(
+                Connector.s.execute(QueryBuilder
+                    .select()
+                    .from("customer_by_balance")
+                    .where(QueryBuilder.eq("C_D_ID", i))
+                    .limit(10)
+                ).all()
+            );
+        });
 
-    //transaction 8
+        //Output: step 1
+        rows.stream()
+            .sorted((r1, r2) -> r2.getDecimal("C_BALANCE").compareTo(r1.getDecimal("C_BALANCE")))
+            .limit(10)
+            .forEach(r ->{
+                //a
+                Row c = Wrapper.findCustomer(r.getInt("C_W_ID"), r.getInt("C_D_ID"), r.getInt("C_ID"), "C_FIRST", "C_MIDDLE", "C_LAST");
+                System.out.printf("Name: %s %s %s, ", c.getString(0), c.getString(1), c.getString(2));
+
+                //b
+                System.out.printf("Balance: %s, ", r.getDecimal("C_BALANCE"));
+
+                //c
+                c = Wrapper.findWarehouse(r.getInt("C_W_ID"), "W_NAME");
+                System.out.printf("Warehouse name: %s, ", c.getString(0));
+
+                //d
+                c = Wrapper.findDistrict(r.getInt("C_W_ID"), r.getInt("C_D_ID"), "D_NAME");
+                System.out.printf("District name: %s\n",  c.getString(0));
+
+            });
+
+    }
+    
+    //Transaction 8
     public static void relatedCustomer(int cwid, int cdid, int cid) {
         //Find all tuples in orders for this customer
         System.out.println("C_W_ID: " + cwid + " C_D_ID: " + cdid + " C_ID: "+ cid);
