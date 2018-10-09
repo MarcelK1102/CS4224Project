@@ -17,5 +17,5 @@ sed -i -e "s/seeds:.*$/seeds: \"${SEEDS}\"/" cassandra.yaml
 sed -i -e "s/listen_address:.*$/listen_address: ${THIS_IP}/" cassandra.yaml
 sed -i -e "s/rpc_address:.*$/rpc_address: ${THIS_IP}/" cassandra.yaml
 sed -i -e "s/rpc_address:.*$/rpc_address: ${THIS_IP}/" cassandra.yaml
-sed -i -e "s/request_timeout_in_ms:.*$/request_timeout_in_ms: 60000/" cassandra.yaml
+sed -i -e "s/request_timeout_in_ms:.*$/request_timeout_in_ms: 600000/" cassandra.yaml
 ../bin/cassandra

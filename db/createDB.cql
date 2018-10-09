@@ -27,7 +27,7 @@ CREATE TABLE district (
     D_TAX DECIMAL,
     D_YTD DECIMAL,
     D_NEXT_O_ID INT,
-    PRIMARY KEY(D_W_ID, D_ID)
+    PRIMARY KEY( (D_W_ID, D_ID) )
 );
 
 CREATE TABLE customer ( 
@@ -55,7 +55,7 @@ CREATE TABLE customer (
     PRIMARY KEY( (C_D_ID), C_W_ID, C_ID)
 );
 
-create materialized view customer_by_balance
+create materialized view customer_by_balance 
 as select C_BALANCE, C_ID, C_W_ID, C_D_ID
 from customer
 where C_BALANCE is not null
@@ -85,7 +85,6 @@ and O_D_ID is not null
 and O_ID is not null
 and O_C_ID is not null
 primary key ((O_W_ID, O_D_ID, O_C_ID), O_ID);
-
 
 CREATE TABLE item ( 
     I_ID INT, 
@@ -141,7 +140,7 @@ CREATE TABLE stock (
     S_DIST_09 VARCHAR,
     S_DIST_10 VARCHAR,
     S_DATA VARCHAR,
-    PRIMARY KEY((S_I_ID, S_W_ID))
+    PRIMARY KEY((S_W_ID), S_I_ID)
 );
 
 

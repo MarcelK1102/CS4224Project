@@ -50,17 +50,6 @@ public class Transaction {
         System.out.println("Ended input");
     }
 
-    //Task 4 output DB state:
-    public static void handleOutput(){
-        for(Select q : outputQueries){
-            Row r = Connector.s.execute(q).one();
-            System.out.println(r.getColumnDefinitions());
-            System.out.println(r + "\n");
-        }
-        double timeSeconds = (endTime - startTime) / 1000.0;
-        System.out.println("number of transactions : " + nxact + ", total transaction execution time : " + timeSeconds + ", transaction throughput : " + ( ((double) nxact)/timeSeconds) );
-    }
-
     //Transaction 1
     private static void newOrder(int wid, int did, int cid, List<Integer> ids, List<Integer> wids, List<Integer> quantities ) throws NoSuchElementException{
         //Processing
@@ -88,6 +77,7 @@ public class Transaction {
 
         //Step 4
         BigDecimal totalAmount = BigDecimal.ZERO, oldquantity;
+        
         
         //Step 5
         for(int i = 0; i < ids.size(); i++){
@@ -671,36 +661,4 @@ public class Transaction {
             catch(Exception e) { System.out.println("Unable to perform Related-Customer transaction, failed with code: " + e); }
         });
     }
-
-    private static final Select outputQueries[] = new Select[] {
-        //4.a
-        QueryBuilder
-            .select(QueryBuilder.sum("W_YTD"))
-            .from("warehouse"),
-
-        //4.b
-        QueryBuilder
-            .select(QueryBuilder.sum("D_YTD"), QueryBuilder.sum("D_NEXT_O_ID"))
-            .from("district"),
-
-        //4.c        
-        QueryBuilder
-            .select(QueryBuilder.sum("C_BALANCE"), QueryBuilder.sum("C_YTD_PAYMENT"), QueryBuilder.sum("C_PAYMENT_CNT"), QueryBuilder.sum("C_DELIVERY_CNT"))
-            .from("customer"),
-        
-        //4.d
-        QueryBuilder
-                .select(QueryBuilder.max("O_ID"), QueryBuilder.sum("O_OL_CNT"))
-                .from("orders"),
-            
-        //4.e - Times out at the moment...  
-        QueryBuilder
-                .select(QueryBuilder.sum("OL_AMOUNT"), QueryBuilder.sum("OL_QUANTITY"))
-                .from("order_line"),
-            
-        //4.f - Times out at the moment...
-        QueryBuilder
-                .select(QueryBuilder.sum("S_QUANTITY"), QueryBuilder.sum("S_YTD"), QueryBuilder.sum("S_ORDER_CNT"))
-                .from("stock")
-    };  
 }

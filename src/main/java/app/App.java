@@ -2,8 +2,6 @@ package app;
 
 import com.datastax.driver.core.ConsistencyLevel;
 
-import org.apache.log4j.BasicConfigurator;
-
 public class App {   
 
     public static void main(String args[]){
@@ -11,16 +9,13 @@ public class App {
             Connector.connect(ConsistencyLevel.QUORUM);
         else
             Connector.connect(ConsistencyLevel.ONE);
-        BasicConfigurator.configure();
-        
+        // BasicConfigurator.configure();
         try{
             Transaction.handleInput();
-            
-            // Transaction.handleOutput();
-        } catch (Exception e){
-            e.printStackTrace();
         } finally {
             Connector.close();
+            double timeSeconds = (Transaction.endTime - Transaction.startTime) / 1000.0;
+            System.out.println("#!#!STATS: number of transactions : " + Transaction.nxact + ", total transaction execution time : " + timeSeconds + " seconds, transaction throughput : " + ( (Transaction.nxact)/timeSeconds) );
         }
         return;
     }

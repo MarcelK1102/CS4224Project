@@ -25,7 +25,7 @@ public class Connector {
             .withClusterName(clusterName)
             .addContactPoints(contactPoints)
             .withPort(port)
-            .withSocketOptions(new SocketOptions().setReadTimeoutMillis(65000))
+            .withSocketOptions(new SocketOptions().setReadTimeoutMillis(600000))
             .withQueryOptions(new QueryOptions().setConsistencyLevel(qo))
             .build();;
         s = cluster.connect();
