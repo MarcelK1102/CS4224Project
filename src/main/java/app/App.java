@@ -14,7 +14,6 @@ public class App {
         BasicConfigurator.configure();
         
         try{
-            Transaction.popularItem(1, 1, 900);
             Transaction.handleInput();
             
             // Transaction.handleOutput();

@@ -488,8 +488,7 @@ public class Transaction {
         //O:step 3+4
         for(Integer o : orders ){
             //3.a
-            if(o!=5028)
-            continue;
+        
             Row Order = Wrapper.findOrder(wid,did,o);
             
             System.out.println("Order ID: " + o + " Date " + Order.getTimestamp("O_ENTRY_D"));
