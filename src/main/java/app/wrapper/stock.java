@@ -1,56 +1,45 @@
 package app.wrapper;
-import java.util.HashMap;
-import java.util.Map;
-import app.Connector;
 import com.datastax.driver.core.Row;
+import java.util.Arrays;
+import java.util.List;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 public class stock extends tablebase{
-	private static final String tablename = "stock";
-	private static final String names[] = new String[] {"s_w_id", "s_i_id", "s_quantity", "s_ytd", "s_order_cnt", "s_remote_cnt", "s_dist_01", "s_dist_02", "s_dist_03", "s_dist_04", "s_dist_05", "s_dist_06", "s_dist_07", "s_dist_08", "s_dist_09", "s_dist_10", "s_data"};
-	private static final int nkeys = 2;
-	private static final Map<String,Integer> namesi;
-	static {namesi = new HashMap<String,Integer>();namesi.put("s_w_id",0);namesi.put("s_i_id",1);namesi.put("s_quantity",2);namesi.put("s_ytd",3);namesi.put("s_order_cnt",4);namesi.put("s_remote_cnt",5);namesi.put("s_dist_01",6);namesi.put("s_dist_02",7);namesi.put("s_dist_03",8);namesi.put("s_dist_04",9);namesi.put("s_dist_05",10);namesi.put("s_dist_06",11);namesi.put("s_dist_07",12);namesi.put("s_dist_08",13);namesi.put("s_dist_09",14);namesi.put("s_dist_10",15);namesi.put("s_data",16); }
-	public Integer wid(){return (Integer)values[0];};
-	public Integer iid(){return (Integer)values[1];};
-	public java.math.BigDecimal quantity(){return (java.math.BigDecimal)values[2];};
-	public java.math.BigDecimal ytd(){return (java.math.BigDecimal)values[3];};
-	public Integer ordercnt(){return (Integer)values[4];};
-	public Integer remotecnt(){return (Integer)values[5];};
-	public java.lang.String dist01(){return (java.lang.String)values[6];};
-	public java.lang.String dist02(){return (java.lang.String)values[7];};
-	public java.lang.String dist03(){return (java.lang.String)values[8];};
-	public java.lang.String dist04(){return (java.lang.String)values[9];};
-	public java.lang.String dist05(){return (java.lang.String)values[10];};
-	public java.lang.String dist06(){return (java.lang.String)values[11];};
-	public java.lang.String dist07(){return (java.lang.String)values[12];};
-	public java.lang.String dist08(){return (java.lang.String)values[13];};
-	public java.lang.String dist09(){return (java.lang.String)values[14];};
-	public java.lang.String dist10(){return (java.lang.String)values[15];};
-	public java.lang.String data(){return (java.lang.String)values[16];};
-	public void set_wid(Integer value){values[0] = value;};
-	public void set_iid(Integer value){values[1] = value;};
-	public void set_quantity(java.math.BigDecimal value){values[2] = value;};
-	public void set_ytd(java.math.BigDecimal value){values[3] = value;};
-	public void set_ordercnt(Integer value){values[4] = value;};
-	public void set_remotecnt(Integer value){values[5] = value;};
-	public void set_dist01(java.lang.String value){values[6] = value;};
-	public void set_dist02(java.lang.String value){values[7] = value;};
-	public void set_dist03(java.lang.String value){values[8] = value;};
-	public void set_dist04(java.lang.String value){values[9] = value;};
-	public void set_dist05(java.lang.String value){values[10] = value;};
-	public void set_dist06(java.lang.String value){values[11] = value;};
-	public void set_dist07(java.lang.String value){values[12] = value;};
-	public void set_dist08(java.lang.String value){values[13] = value;};
-	public void set_dist09(java.lang.String value){values[14] = value;};
-	public void set_dist10(java.lang.String value){values[15] = value;};
-	public void set_data(java.lang.String value){values[16] = value;};
-	public stock () {super(tablename, names, namesi, nkeys);}
-	public stock (Row r) {super(tablename, names, namesi, nkeys, r);}
-	public stock (Integer wid,Integer iid, String ... attr) {this(Connector.s.execute(
-		(attr.length > 0 ? QueryBuilder.select(attr) : QueryBuilder.select())
-		.from("stock")
-		.where().and(QueryBuilder.eq("s_w_id", wid)).and(QueryBuilder.eq("s_i_id", iid)))
-	.one());
-		set_wid(wid);set_iid(iid);}
-}
+	private static final List<String> primarykeys = Arrays.asList("s_w_id","s_i_id");
+	public Integer wid(){return r.getInt("s_w_id");};
+	public Integer iid(){return r.getInt("s_i_id");};
+	public java.math.BigDecimal quantity(){return r.getDecimal("s_quantity");};
+	public java.math.BigDecimal ytd(){return r.getDecimal("s_ytd");};
+	public Integer ordercnt(){return r.getInt("s_order_cnt");};
+	public Integer remotecnt(){return r.getInt("s_remote_cnt");};
+	public java.lang.String dist01(){return r.getString("s_dist_01");};
+	public java.lang.String dist02(){return r.getString("s_dist_02");};
+	public java.lang.String dist03(){return r.getString("s_dist_03");};
+	public java.lang.String dist04(){return r.getString("s_dist_04");};
+	public java.lang.String dist05(){return r.getString("s_dist_05");};
+	public java.lang.String dist06(){return r.getString("s_dist_06");};
+	public java.lang.String dist07(){return r.getString("s_dist_07");};
+	public java.lang.String dist08(){return r.getString("s_dist_08");};
+	public java.lang.String dist09(){return r.getString("s_dist_09");};
+	public java.lang.String dist10(){return r.getString("s_dist_10");};
+	public java.lang.String data(){return r.getString("s_data");};
+	public void set_wid(Integer value){assigns.and(QueryBuilder.set("s_w_id",value));};
+	public void set_iid(Integer value){assigns.and(QueryBuilder.set("s_i_id",value));};
+	public void set_quantity(java.math.BigDecimal value){assigns.and(QueryBuilder.set("s_quantity",value));};
+	public void set_ytd(java.math.BigDecimal value){assigns.and(QueryBuilder.set("s_ytd",value));};
+	public void set_ordercnt(Integer value){assigns.and(QueryBuilder.set("s_order_cnt",value));};
+	public void set_remotecnt(Integer value){assigns.and(QueryBuilder.set("s_remote_cnt",value));};
+	public void set_dist01(java.lang.String value){assigns.and(QueryBuilder.set("s_dist_01",value));};
+	public void set_dist02(java.lang.String value){assigns.and(QueryBuilder.set("s_dist_02",value));};
+	public void set_dist03(java.lang.String value){assigns.and(QueryBuilder.set("s_dist_03",value));};
+	public void set_dist04(java.lang.String value){assigns.and(QueryBuilder.set("s_dist_04",value));};
+	public void set_dist05(java.lang.String value){assigns.and(QueryBuilder.set("s_dist_05",value));};
+	public void set_dist06(java.lang.String value){assigns.and(QueryBuilder.set("s_dist_06",value));};
+	public void set_dist07(java.lang.String value){assigns.and(QueryBuilder.set("s_dist_07",value));};
+	public void set_dist08(java.lang.String value){assigns.and(QueryBuilder.set("s_dist_08",value));};
+	public void set_dist09(java.lang.String value){assigns.and(QueryBuilder.set("s_dist_09",value));};
+	public void set_dist10(java.lang.String value){assigns.and(QueryBuilder.set("s_dist_10",value));};
+	public void set_data(java.lang.String value){assigns.and(QueryBuilder.set("s_data",value));};
+	public stock(){super("stock", primarykeys);}
+	public stock (Integer wid,Integer iid, String ... attr) {this(); find(wid,iid, attr);}
+	public Row find(Integer wid,Integer iid, String ... attr){return super.find(Arrays.asList(wid,iid), attr); }}
 

@@ -26,6 +26,11 @@ public class App {
                     timeSeconds > 0.0 ? Transaction.counts[c]/timeSeconds : 0.0
                     );
             }
+            System.out.println("New Order Transaction times:");
+            for(int i = 0; i < Transaction.newOrderTimes.length; i++){
+                long t = Transaction.newOrderTimes[i];
+                System.out.println("point " + i + " took " + (t/1000.0) + " seconds");
+            }
         }
         return;
     }

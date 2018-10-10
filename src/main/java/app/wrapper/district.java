@@ -1,44 +1,33 @@
 package app.wrapper;
-import java.util.HashMap;
-import java.util.Map;
-import app.Connector;
 import com.datastax.driver.core.Row;
+import java.util.Arrays;
+import java.util.List;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 public class district extends tablebase{
-	private static final String tablename = "district";
-	private static final String names[] = new String[] {"d_w_id", "d_id", "d_name", "d_street_1", "d_street_2", "d_city", "d_state", "d_zip", "d_tax", "d_ytd", "d_next_o_id"};
-	private static final int nkeys = 2;
-	private static final Map<String,Integer> namesi;
-	static {namesi = new HashMap<String,Integer>();namesi.put("d_w_id",0);namesi.put("d_id",1);namesi.put("d_name",2);namesi.put("d_street_1",3);namesi.put("d_street_2",4);namesi.put("d_city",5);namesi.put("d_state",6);namesi.put("d_zip",7);namesi.put("d_tax",8);namesi.put("d_ytd",9);namesi.put("d_next_o_id",10); }
-	public Integer wid(){return (Integer)values[0];};
-	public Integer id(){return (Integer)values[1];};
-	public java.lang.String name(){return (java.lang.String)values[2];};
-	public java.lang.String street1(){return (java.lang.String)values[3];};
-	public java.lang.String street2(){return (java.lang.String)values[4];};
-	public java.lang.String city(){return (java.lang.String)values[5];};
-	public java.lang.String state(){return (java.lang.String)values[6];};
-	public java.lang.String zip(){return (java.lang.String)values[7];};
-	public java.math.BigDecimal tax(){return (java.math.BigDecimal)values[8];};
-	public java.math.BigDecimal ytd(){return (java.math.BigDecimal)values[9];};
-	public Integer nextoid(){return (Integer)values[10];};
-	public void set_wid(Integer value){values[0] = value;};
-	public void set_id(Integer value){values[1] = value;};
-	public void set_name(java.lang.String value){values[2] = value;};
-	public void set_street1(java.lang.String value){values[3] = value;};
-	public void set_street2(java.lang.String value){values[4] = value;};
-	public void set_city(java.lang.String value){values[5] = value;};
-	public void set_state(java.lang.String value){values[6] = value;};
-	public void set_zip(java.lang.String value){values[7] = value;};
-	public void set_tax(java.math.BigDecimal value){values[8] = value;};
-	public void set_ytd(java.math.BigDecimal value){values[9] = value;};
-	public void set_nextoid(Integer value){values[10] = value;};
-	public district () {super(tablename, names, namesi, nkeys);}
-	public district (Row r) {super(tablename, names, namesi, nkeys, r);}
-	public district (Integer wid,Integer id, String ... attr) {this(Connector.s.execute(
-		(attr.length > 0 ? QueryBuilder.select(attr) : QueryBuilder.select())
-		.from("district")
-		.where().and(QueryBuilder.eq("d_w_id", wid)).and(QueryBuilder.eq("d_id", id)))
-	.one());
-		set_wid(wid);set_id(id);}
-}
+	private static final List<String> primarykeys = Arrays.asList("d_w_id","d_id");
+	public Integer wid(){return r.getInt("d_w_id");};
+	public Integer id(){return r.getInt("d_id");};
+	public java.lang.String name(){return r.getString("d_name");};
+	public java.lang.String street1(){return r.getString("d_street_1");};
+	public java.lang.String street2(){return r.getString("d_street_2");};
+	public java.lang.String city(){return r.getString("d_city");};
+	public java.lang.String state(){return r.getString("d_state");};
+	public java.lang.String zip(){return r.getString("d_zip");};
+	public java.math.BigDecimal tax(){return r.getDecimal("d_tax");};
+	public java.math.BigDecimal ytd(){return r.getDecimal("d_ytd");};
+	public Integer nextoid(){return r.getInt("d_next_o_id");};
+	public void set_wid(Integer value){assigns.and(QueryBuilder.set("d_w_id",value));};
+	public void set_id(Integer value){assigns.and(QueryBuilder.set("d_id",value));};
+	public void set_name(java.lang.String value){assigns.and(QueryBuilder.set("d_name",value));};
+	public void set_street1(java.lang.String value){assigns.and(QueryBuilder.set("d_street_1",value));};
+	public void set_street2(java.lang.String value){assigns.and(QueryBuilder.set("d_street_2",value));};
+	public void set_city(java.lang.String value){assigns.and(QueryBuilder.set("d_city",value));};
+	public void set_state(java.lang.String value){assigns.and(QueryBuilder.set("d_state",value));};
+	public void set_zip(java.lang.String value){assigns.and(QueryBuilder.set("d_zip",value));};
+	public void set_tax(java.math.BigDecimal value){assigns.and(QueryBuilder.set("d_tax",value));};
+	public void set_ytd(java.math.BigDecimal value){assigns.and(QueryBuilder.set("d_ytd",value));};
+	public void set_nextoid(Integer value){assigns.and(QueryBuilder.set("d_next_o_id",value));};
+	public district(){super("district", primarykeys);}
+	public district (Integer wid,Integer id, String ... attr) {this(); find(wid,id, attr);}
+	public Row find(Integer wid,Integer id, String ... attr){return super.find(Arrays.asList(wid,id), attr); }}
 

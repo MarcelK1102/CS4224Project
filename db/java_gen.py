@@ -89,28 +89,29 @@ for statement in buf.split(");"):
 		primarykeys.append(k)
 	f = open("../src/main/java/app/wrapper/{}.java".format(tablename), "w", newline = '\n')
 	f.write("package app.wrapper;\n")
-	f.write("import java.util.HashMap;\n")
-	f.write("import java.util.Map;\n")
-	f.write("import app.Connector;\n")
 	f.write("import com.datastax.driver.core.Row;\n")
+	f.write("import java.util.Arrays;\n")
+	f.write("import java.util.List;\n")
 	f.write("import com.datastax.driver.core.querybuilder.QueryBuilder;\n")
 	f.write("public class {} extends tablebase{{\n".format(tablename))
-	f.write('\tprivate static final String tablename = "{}";\n'.format(tablename))
-	f.write("\tprivate static final String names[] = new String[] {{{}}};\n".format(", ".join(['"%s"' % x for x in columns.keys()])))
-	f.write("\tprivate static final int nkeys = {};\n".format(len(primarykeys)))
-	f.write("\tprivate static final Map<String,Integer> namesi;\n")
-	f.write("\tstatic {{namesi = new HashMap<String,Integer>();{} }}\n".format("".join(['namesi.put("{}",{});'.format(k, i) for i, k in enumerate(columns.keys())])))
+	f.write('\tprivate static final List<String> primarykeys = Arrays.asList({});\n'.format(",".join('"{}"'.format(k) for k in primarykeys)))
+	# f.write('\tprivate static final String tablename = "{}";\n'.format(tablename))
+	# f.write("\tprivate static final String names[] = new String[] {{{}}};\n".format(", ".join(['"%s"' % x for x in columns.keys()])))
+	# f.write("\tprivate static final int nkeys = {};\n".format(len(primarykeys)))
+	# f.write("\tprivate static final Map<String,Integer> namesi;\n")
+	# f.write("\tstatic {{namesi = new HashMap<String,Integer>();{} }}\n".format("".join(['namesi.put("{}",{});'.format(k, i) for i, k in enumerate(columns.keys())])))
 	for i, (k,v) in enumerate(columns.items()):
-		f.write("\tpublic {} {}(){{return ({})values[{}];}};\n".format(v, "".join(k.split('_')[1:]), v, i))
+		f.write('\tpublic {} {}(){{return r.{}("{}");}};\n'.format(v, "".join(k.split('_')[1:]), fs[v], k))
 	for i, (k,v) in enumerate(columns.items()):
-		f.write("\tpublic void set_{}({} value){{values[{}] = value;}};\n".format("".join(k.split('_')[1:]), v, i))
-	f.write('\tpublic {0} () {{super(tablename, names, namesi, nkeys);}}\n'.format(tablename))
-	f.write('\tpublic {0} (Row r) {{super(tablename, names, namesi, nkeys, r);}}\n'.format(tablename))
-	f.write('\tpublic {0} ({1}, String ... attr) {{this(Connector.s.execute(\n\t\t(attr.length > 0 ? QueryBuilder.select(attr) : QueryBuilder.select())\n\t\t.from("{0}")\n\t\t.where().{2})\n\t.one());\n\t\t{3};}}\n'.format(
+		f.write('\tpublic void set_{}({} value){{assigns.and(QueryBuilder.set("{}",value));}};\n'.format("".join(k.split('_')[1:]), v, k))
+	f.write('\tpublic {0}(){{super("{0}", primarykeys);}}\n'.format(tablename))
+	f.write('\tpublic {0} ({1}, String ... attr) {{this(); find({2}, attr);}}\n'.format(
 		tablename, 
 		",".join(["{} {}".format(columns[k],"".join(k.split('_')[1:])) for k in primarykeys]), 
-		'.'.join(['and(QueryBuilder.eq("{0}", {1}))'.format(k, "".join(k.split('_')[1:])) for k in primarykeys]),
-		";".join(["set_{0}({0})".format("".join(k.split('_')[1:])) for k in primarykeys] )))
+		",".join("".join(k.split('_')[1:]) for k in primarykeys)))
+	f.write("\tpublic Row find(%s, String ... attr){return super.find(Arrays.asList(%s), attr); }" %
+	 	(",".join(["{} {}".format(columns[k],"".join(k.split('_')[1:])) for k in primarykeys]),
+		 ",".join("".join(k.split('_')[1:]) for k in primarykeys)))
 	# f.write("\tpublic {}({}) {{ this(); {}; }}\n".format(tablename, 
 	# 	',\n\t\t'.join(['%s %s' % (value, key) for key,value in columns.items()]),
 	# 	';\n\t\t'.join(['this.%s = %s' % (key, key) for key,value in columns.items()])))

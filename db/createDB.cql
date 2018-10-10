@@ -27,7 +27,7 @@ CREATE TABLE district (
     D_TAX DECIMAL,
     D_YTD DECIMAL,
     D_NEXT_O_ID INT,
-    PRIMARY KEY( (D_W_ID, D_ID) )
+    PRIMARY KEY( (D_ID), D_W_ID )
 );
 
 CREATE TABLE customer ( 
