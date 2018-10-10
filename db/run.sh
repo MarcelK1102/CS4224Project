@@ -28,7 +28,7 @@ wait
 echo "ALL TRANSACTIONS DONE"
 
 for i in $(seq 1 $NC); do
-	ssh $CLUSTER_NAME@$MASTER "cat ~/$i.out | grep #!#!STATS:"
+	ssh $CLUSTER_NAME@$MASTER "cat ~/$i.out | grep '#!#!STATS:''"
 done
 #4a
 cqlsh $MASTER --request-timeout=3600 -e "select sum(W_YTD) from warehouse.warehouse"

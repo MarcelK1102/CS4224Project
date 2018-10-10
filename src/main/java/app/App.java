@@ -9,13 +9,23 @@ public class App {
             Connector.connect(ConsistencyLevel.QUORUM);
         else
             Connector.connect(ConsistencyLevel.ONE);
+        int limit = args.length > 1 ? Integer.parseInt(args[1]) : -1;
         // BasicConfigurator.configure();
         try{
-            Transaction.handleInput();
+            Transaction.handleInput(limit);
         } finally {
             Connector.close();
             double timeSeconds = (Transaction.endTime - Transaction.startTime) / 1000.0;
             System.out.println("#!#!STATS: number of transactions : " + Transaction.nxact + ", total transaction execution time : " + timeSeconds + " seconds, transaction throughput : " + ( (Transaction.nxact)/timeSeconds) );
+            for(char c :Transaction.fs.keySet()){
+                timeSeconds = Transaction.times[c]/1000.0;
+                System.out.printf("Transaction %c was executed %d times, took a total of %f seconds, average time per transaction was %f\n",
+                    c,
+                    Transaction.counts[c],
+                    timeSeconds,
+                    timeSeconds > 0.0 ? Transaction.counts[c]/timeSeconds : 0.0
+                    );
+            }
         }
         return;
     }

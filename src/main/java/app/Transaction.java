@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.security.InvalidKeyException;
-import java.sql.Date;
+import java.util.Date;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,8 +20,8 @@ import java.util.stream.IntStream;
 
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
+import com.datastax.driver.core.querybuilder.Batch;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
-import com.datastax.driver.core.querybuilder.Select;
 
 import app.wrapper.customer;
 import app.wrapper.district;
@@ -35,14 +35,19 @@ public class Transaction {
     public static int nxact = 0;
     public static long startTime;
     public static long endTime;
+    public static int counts[] = new int[256];
+    public static long times[] = new long[256];
     //Task 2 take input
-    public static void handleInput() {
+    public static void handleInput(int limit) {
         try{
             char []buf = new char[2];
             startTime = System.currentTimeMillis();
-            while(bi.read(buf, 0, 2) > 0){
+            while(bi.read(buf, 0, 2) > 0 && limit-- != 0){
                 System.out.println(buf[0]);
+                long start = System.currentTimeMillis();
                 fs.get(buf[0]).run();
+                times[buf[0]] += System.currentTimeMillis() - start; 
+                counts[buf[0]]++;
                 nxact++;
             }
             endTime = System.currentTimeMillis();
@@ -52,59 +57,82 @@ public class Transaction {
 
     //Transaction 1
     private static void newOrder(int wid, int did, int cid, List<Integer> ids, List<Integer> wids, List<Integer> quantities ) throws NoSuchElementException{
-        //Processing
-        //Step 1
-        district d = new district(wid, did, "D_NEXT_O_ID");
+        //Step O:1
+        customer c = new customer(wid, did, cid, "C_W_ID" , "C_W_ID", "C_ID", "C_LAST", "C_CREDIT", "C_DISCOUNT");
+        System.out.println(c);
+        
+        //Step P:1
+        district d = new district(wid, did, "D_NEXT_O_ID", "D_TAX");
+        BigDecimal dtax = d.tax();
+        d.set_tax(null);
         int N; 
         
         //https://stackoverflow.com/questions/3935915/how-to-create-auto-increment-ids-in-cassandra/29391877#29391877
-        //Step 2
+        //Step P:2
         do{
             N = d.nextoid() + 1;
             d.set_nextoid(N);
         } while(!d.update(QueryBuilder.eq("D_NEXT_O_ID", N-1)));
 
-        //Step 3
-        Connector.s.execute((QueryBuilder.insertInto("orders")
+        //Step O:2
+        BigDecimal wtax = new warehouse(wid, "W_TAX").tax();
+        System.out.println("w_tax : " + wtax + ", d_tax : " + dtax);
+
+        //Step P:3
+        Date now = Date.from(Instant.now());
+        Connector.s.executeAsync((QueryBuilder.insertInto("orders")
                 .value("O_ID", N)
                 .value("O_D_ID", did)
                 .value("O_W_ID ", wid) 
                 .value("O_C_ID", cid) 
-                .value("O_ENTRY_D", Date.from(Instant.now()))
+                .value("O_ENTRY_D", now)
                 .value("O_OL_CNT", BigDecimal.valueOf( ids.size())) 
                 .value("O_ALL_LOCAL", BigDecimal.valueOf(wids.stream().allMatch(i -> i == wid) ? 1 : 0))
         ));
 
-        //Step 4
+        //Step O:3
+        System.out.println("o_id : " + N + " o_entry_d : " + now);
+
+        //Step P:4
         BigDecimal totalAmount = BigDecimal.ZERO, oldquantity;
         
-        
-        //Step 5
+        //Step P:5
+        Batch ba = QueryBuilder.batch();
         for(int i = 0; i < ids.size(); i++){
             int iid = ids.get(i);
-            //step a
+            //step P:a
             stock stk = new stock(wid, iid,  "S_QUANTITY"," S_YTD"," S_ORDER_CNT"," S_REMOTE_CNT"," S_DIST_" + String.format("%02d", did)); 
             do{
-                //Step b
+                //Step P:b
                 oldquantity = stk.quantity();
                 stk.set_quantity(oldquantity.subtract(BigDecimal.valueOf(quantities.get(i))));
                 
-                //Step c
+                //Step P:c
                 stk.set_quantity(stk.quantity().add(BigDecimal.valueOf(stk.quantity().doubleValue() < 10.0 ? 100.0 : 0.0)));
 
-                //Step d  
+                //Step P:d  
                 stk.set_ytd(stk.ytd().add(BigDecimal.valueOf(quantities.get(i))));
                 stk.set_ordercnt(stk.ordercnt() + 1);
                 stk.set_remotecnt(stk.remotecnt() + (wid != wids.get(i) ? 1 : 0));
             } while(!stk.update(QueryBuilder.eq("S_QUANTITY", oldquantity)));
-            //Step e
-            BigDecimal itemAmount = new item(iid, "I_PRICE").price();
             
-            //Step f
+            //Step P:e
+            item it = new item(iid, "I_PRICE", "I_NAME");
+            BigDecimal itemAmount = it.price().multiply(BigDecimal.valueOf(quantities.get(i)));
+            
+            //Step P:f
             totalAmount = totalAmount.add(itemAmount);
             
-            //Step g
-            Connector.s.execute(QueryBuilder.insertInto("order_line")
+            //step O:5
+            System.out.println("item_number : " + iid);
+            System.out.println("i_name : " + it.name());
+            System.out.println("supplier_warehouse : " + wids.get(i));
+            System.out.println("quantity : " + quantities.get(i));
+            System.out.println("ol_amount : " + itemAmount);
+            System.out.println("s_quantity : " + oldquantity);
+
+            //Step P:g
+            ba.add(QueryBuilder.insertInto("order_line")
                 .value("OL_O_ID", N)
                 .value("OL_D_ID", did)
                 .value("OL_W_ID", wid)
@@ -116,58 +144,38 @@ public class Transaction {
                 .value("OL_DIST_INFO","S_DIST_" + String.format("%02d", did))
             );
         }
+        Connector.s.executeAsync(ba);
 
-        //Step 6
-        warehouse w = new warehouse(wid, "W_TAX");
-        d = new district(wid, did, "D_TAX");
-        customer c = new customer(wid, did, cid, "C_W_ID" , "C_W_ID", "C_ID", "C_LAST", "C_CREDIT", "C_DISCOUNT");
-        totalAmount = totalAmount.multiply(BigDecimal.ONE.add(d.tax()).add(w.tax())).multiply(BigDecimal.ONE.subtract(c.discount()));
+        //Step P:6
+        totalAmount = totalAmount.multiply(BigDecimal.ONE.add(dtax).add(wtax)).multiply(BigDecimal.ONE.subtract(c.discount()));
         
-        //Output:
-        //Step 1
-        System.out.println(c);
-
-        //Step 2
-        System.out.println(w);
-        System.out.println(d);
-
-        //Step 3
-        System.out.println(new orders(wid, did, N, "O_ID", "O_ENTRY_D"));
-
-        //Step 4
+        //Step O:4
         System.out.println("num_items : " + ids.size() + ", total_amount : " + totalAmount);
-
-        //Step 5
-        for(int i = 0; i < ids.size(); i++){
-            System.out.println(new item(ids.get(i), "I_NAME"));
-            System.out.println(new order_line(wid, did, N, i+1, "OL_AMOUNT"));
-            System.out.println(new stock(wid, ids.get(i), "S_QUANTITY"));
-        }
     }
+
     //Transaction 2
     public static void paymentTransaction(int cwid, int cdid, int cid, BigDecimal payment) {
-        warehouse w = new warehouse(cwid,"W_STREET_1","W_STREET_2","W_CITY","W_STATE","W_ZIP");
+        warehouse w = new warehouse(cwid,"W_STREET_1","W_STREET_2","W_CITY","W_STATE","W_ZIP", "W_YTD");
         BigDecimal oldYtd, oldBal;
         Float oldYtdPayment;
         Integer oldPayment;
-        w.tax(); 
         //Step 1      
         do {
             oldYtd = w.ytd();
             w.set_ytd(payment.add(w.ytd()));
         } while(!w.update(QueryBuilder.eq("W_YTD", oldYtd)));
+        w.set_ytd(null);
 
-        district d = new district(cwid, cdid,"D_STREET_1","D_STREET_2","D_CITY","D_STATE","D_ZIP");
+        district d = new district(cwid, cdid,"D_STREET_1","D_STREET_2","D_CITY","D_STATE","D_ZIP", "D_YTD");
         
         //Step 2
         do{
             oldYtd = d.ytd();
             d.set_ytd(payment.add(oldYtd));
         } while(!d.update(QueryBuilder.eq("D_YTD", oldYtd)));
-
+        d.set_ytd(null);
         //Step 3
-        customer c = new customer(cwid, cdid, cid,"C_FIRST","C_MIDDLE","C_LAST","C_STREET_1","C_STREET_2","C_CITY","C_STATE","C_ZIP","C_PHONE","C_SINCE","C_CREDIT","C_CREDIT_LIM","C_DISCOUNT","C_BALANCE" );
-        
+        customer c = new customer(cwid, cdid, cid);
         do {
             oldYtdPayment = c.ytdpayment();
             oldBal = c.balance();
@@ -263,7 +271,7 @@ public class Transaction {
                 old_cnt = c.deliverycnt();
                 c.set_balance(c_balance.add(B));
                 c.set_deliverycnt(old_cnt + 1);
-            } while(!c.update(QueryBuilder.eq("C_DELIVER_CNT", old_cnt)));
+            } while(!c.update(QueryBuilder.eq("C_DELIVERY_CNT", old_cnt)));
         }
     }
     //Transaction 4
@@ -333,12 +341,13 @@ public class Transaction {
         //Step 3
         System.out.println(Connector.s.execute(QueryBuilder
             .select(QueryBuilder.count("S_I_ID"))
-            .from("stock")
+            .from("stock_by_quantity")
             .where(QueryBuilder.eq("S_W_ID", wid))
             .and(QueryBuilder.in("S_I_ID", itemids))
             .and(QueryBuilder.lt("S_QUANTITY", t))
         ).one());
     }
+
     //Transaction 6
     public static void popularItem(int wid, int did, int L) {
         //Row district = Wrapper.findDistrict(wid,did).orElseThrow(() -> new TransactionException("Unable to find customer with id:" + wid));
@@ -547,7 +556,7 @@ public class Transaction {
     }
 
     private static BufferedReader bi = new BufferedReader(new InputStreamReader(System.in));
-    private static final Map<Character, Runnable> fs = new HashMap<>();
+    public static final Map<Character, Runnable> fs = new HashMap<>();
     static {
         //Transaction (a)
         fs.put('N', () -> {
@@ -567,7 +576,7 @@ public class Transaction {
                 quantities.add(i, Integer.parseInt(input[2]));
             }
             try { newOrder(wid, did, cid, ids, wids, quantities); }
-            catch(Exception e){ System.out.println("Unable to perform newOrder transaction failed with code: " + e); }
+            catch(Exception e){ System.out.println("Unable to perform newOrder transaction" ); e.printStackTrace();}
         });
 
         // //Transaction (b)
@@ -579,7 +588,7 @@ public class Transaction {
             int cid = Integer.parseInt(input[2]);
             BigDecimal payment = new BigDecimal(input[3]);
             try { paymentTransaction(wid, did, cid, payment); }
-            catch(Exception e){ System.out.println("Unable to perform payment transaction failed with code: " + e); }
+            catch(Exception e){ System.out.println("Unable to perform payment transaction"); e.printStackTrace();}
         });
 
         // //Transaction (c)
@@ -589,7 +598,7 @@ public class Transaction {
             int wid = Integer.parseInt(input[0]);
             int carrierid = Integer.parseInt(input[1]);
             try{ processDelivery(wid, carrierid); }
-            catch(Exception e) { System.out.println("Unable to perform Delivery transaction transaction failed with code: " + e); }
+            catch(Exception e) { System.out.println("Unable to perform Delivery transaction"); e.printStackTrace(); }
         });
 
         // //Transaction (d)
@@ -600,7 +609,7 @@ public class Transaction {
             int did = Integer.parseInt(input[1]);
             int cid = Integer.parseInt(input[2]);
             try{ getOrderStatus(wid, did, cid); }
-            catch(Exception e) { System.out.println("Unable to perform Order-Status transaction failed with code: " + e); }
+            catch(Exception e) { System.out.println("Unable to perform Order-Status" ); e.printStackTrace(); }
         });
 
         // //Transaction (e)
@@ -612,7 +621,7 @@ public class Transaction {
             BigDecimal T = new BigDecimal(input[2]);
             int L = Integer.parseInt(input[3]);
             try{ stockLevel(wid, did, T, L); }
-            catch(Exception e) { System.out.println("Unable to perform Stock-Level transaction, failed with code: " + e); }
+            catch(Exception e) { System.out.println("Unable to perform Stock-Level"); e.printStackTrace();}
         });
 
         // //Transaction (f)
@@ -623,7 +632,7 @@ public class Transaction {
             int did = Integer.parseInt(input[1]);
             int L = Integer.parseInt(input[2]);
             try{ popularItem(wid, did, L); }
-            catch(Exception e) { System.out.println("Unable to perform Popular-Item transaction, failed with code: " + e); }
+            catch(Exception e) { System.out.println("Unable to perform Popular-Item transaction"); e.printStackTrace();}
         });
 
         // //Transaction (g)
@@ -639,7 +648,7 @@ public class Transaction {
             int did = Integer.parseInt(input[1]);
             int cid = Integer.parseInt(input[2]);
             try{ relatedCustomer(wid, did, cid); }
-            catch(Exception e) { System.out.println("Unable to perform Related-Customer transaction, failed with code: " + e); }
+            catch(Exception e) { System.out.println("Unable to perform Related-Customer"); e.printStackTrace();}
         });
     }
 }

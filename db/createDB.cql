@@ -120,8 +120,6 @@ and OL_NUMBER is not null
 and OL_I_ID is not null
 primary key ((OL_D_ID, OL_I_ID), OL_W_ID, OL_NUMBER, OL_O_ID);
 
-
-
 CREATE TABLE stock (
     S_W_ID INT, 
     S_I_ID INT, 
@@ -143,4 +141,11 @@ CREATE TABLE stock (
     PRIMARY KEY((S_W_ID), S_I_ID)
 );
 
+CREATE MATERIALIZED VIEW stock_by_quantity 
+as select S_W_ID, S_I_ID, S_QUANTITY
+from stock 
+where S_W_ID is not null
+and S_I_ID is not null
+and S_QUANTITY is not null
+PRIMARY KEY ((S_W_ID, S_I_ID), S_QUANTITY);
 
