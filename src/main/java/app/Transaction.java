@@ -208,10 +208,11 @@ public class Transaction {
     //Transaction 3
     public static long processDeliveryTimes[] = new long[8];
     public static void processDelivery(int wid, int carrierid) {
-        long start = System.currentTimeMillis();
+        
         
         for (int districtNo = 1; districtNo <= 10; districtNo++){
-            newOrderTimes[0] = System.currentTimeMillis() - start;
+            long start = System.currentTimeMillis();
+            newOrderTimes[0] = start;
             
             ArrayList<Integer> oids = new ArrayList<>();
 
@@ -220,7 +221,8 @@ public class Transaction {
             .from(Connector.keyspace, "orders")
             .where(QueryBuilder.eq("O_W_ID", wid))
             .and(QueryBuilder.eq("O_D_ID", districtNo)));
-            newOrderTimes[1] = System.currentTimeMillis() - newOrderTimes[0];
+            long time1 = System.currentTimeMillis();
+            newOrderTimes[1] = time1 - start;
 
             Iterator<Row> it = S.iterator();
             while(it.hasNext()){
@@ -234,7 +236,8 @@ public class Transaction {
                 N = Collections.min(oids);
             else
                 continue;
-            newOrderTimes[2] = System.currentTimeMillis() - newOrderTimes[1];
+            long time2 = System.currentTimeMillis();
+            newOrderTimes[2] = time2 - time1;
 
             Row X;
             try {
@@ -246,7 +249,8 @@ public class Transaction {
             int cid = X.getInt("O_C_ID");
             customer c = new customer(wid, districtNo, cid);
             // Row C = Wrapper.findCustomer(wid, districtNo, cid);
-            newOrderTimes[3] = System.currentTimeMillis() - newOrderTimes[2];
+            long time3 = System.currentTimeMillis();
+            newOrderTimes[3] = time3 - time2;
 
             //b)
             Connector.s.execute(QueryBuilder.update(Connector.keyspace, "orders")
@@ -254,7 +258,8 @@ public class Transaction {
             .where(QueryBuilder.eq("O_W_ID", wid))
             .and(QueryBuilder.eq("O_D_ID", districtNo))
             .and(QueryBuilder.eq("O_ID", N)));
-            newOrderTimes[4] = System.currentTimeMillis() - newOrderTimes[3];
+            long time4 = System.currentTimeMillis();
+            newOrderTimes[4] = time4 - time3;
 
             //c)
             ResultSet orderlines = Connector.s.execute(QueryBuilder.select().all()
@@ -275,7 +280,8 @@ public class Transaction {
                 .and(QueryBuilder.eq("OL_O_ID", N))
                 .and(QueryBuilder.eq("OL_NUMBER", OL_Number)));
             }
-            newOrderTimes[5] = System.currentTimeMillis() - newOrderTimes[4];
+            long time5 = System.currentTimeMillis();
+            newOrderTimes[5] = time5 - time4;
 
             //d)
             int old_cnt = c.deliverycnt();
@@ -289,7 +295,8 @@ public class Transaction {
             .and(QueryBuilder.eq("OL_O_ID", N))
             .and(QueryBuilder.eq("OL_D_ID", districtNo))
             ).one().getDecimal(0);
-            newOrderTimes[6] = System.currentTimeMillis() - newOrderTimes[5];
+            long time6 = System.currentTimeMillis();
+            newOrderTimes[6] = time6 - time5;
             do{
                 c.find(wid, districtNo, cid);
                 c_balance = c.balance();
@@ -297,7 +304,8 @@ public class Transaction {
                 c.set_balance(c_balance.add(B));
                 c.set_deliverycnt(old_cnt + 1);
             } while(!c.update(QueryBuilder.eq("C_DELIVERY_CNT", old_cnt)));
-            newOrderTimes[7] = System.currentTimeMillis() - newOrderTimes[6];
+            long time7 = System.currentTimeMillis();
+            newOrderTimes[7] = time7 - time6;
             System.out.println("Times: " + newOrderTimes[0] +", " + newOrderTimes[1] +", " + newOrderTimes[2] +", " + newOrderTimes[3] +", " +  newOrderTimes[4] +", " +  newOrderTimes[5] +", " +  newOrderTimes[6] +", " +  newOrderTimes[7]);
         }
     }
