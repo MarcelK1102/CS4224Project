@@ -298,7 +298,7 @@ public class Transaction {
                 c.set_deliverycnt(old_cnt + 1);
             } while(!c.update(QueryBuilder.eq("C_DELIVERY_CNT", old_cnt)));
             newOrderTimes[7] += System.currentTimeMillis() - start;
-            System.out.println(" " + newOrderTimes[0] +", " + newOrderTimes[1] +", " + newOrderTimes[2] +", " + newOrderTimes[3] +", " +  newOrderTimes[4] +", " +  newOrderTimes[5] +", " +  newOrderTimes[6] +", " +  newOrderTimes[7]);
+            System.out.println("Times: " + newOrderTimes[0] +", " + newOrderTimes[1] +", " + newOrderTimes[2] +", " + newOrderTimes[3] +", " +  newOrderTimes[4] +", " +  newOrderTimes[5] +", " +  newOrderTimes[6] +", " +  newOrderTimes[7]);
         }
     }
     //Transaction 4
