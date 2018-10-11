@@ -22,6 +22,6 @@ In order to run this script first edit the script with the following:
 -  Set JAR to the path of the supplied app.jar
 -  Set XACT to the path of the transaction folder on the server (this could ideally be a shared folder)
 
-Run the script: ./run.sh <NC> <Consistency level>
+Run the script: ./run.sh NC CL
 -   NC is the number of client and can be any number in [1;40]
--   consistency level can be either "one" or "quorum"
+-   CL is consistency level, and can be either "one" or "quorum"
