@@ -25,3 +25,8 @@ In order to run this script first edit the script with the following:
 Run the script: ./run.sh NC CL
 -   NC is the number of client and can be any number in [1;40]
 -   CL is consistency level, and can be either "one" or "quorum"
+
+### Compile from source
+In order to compile the program, simply use the included gradlew file 
+-   first make it executeable
+-   then call "./gradelw fatJar" or "./gradlew run" for simply running the program
