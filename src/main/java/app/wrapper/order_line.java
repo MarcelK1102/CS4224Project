@@ -5,10 +5,10 @@ import java.util.List;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 public class order_line extends tablebase{
 	private static final List<String> primarykeys = Arrays.asList("ol_w_id","ol_d_id","ol_o_id","ol_number");
-	public Integer wid(){return r.getInt("ol_w_id");};
-	public Integer did(){return r.getInt("ol_d_id");};
-	public Integer oid(){return r.getInt("ol_o_id");};
-	public Integer number(){return r.getInt("ol_number");};
+	public int wid(){return keysvalue.get(0);}
+	public int did(){return keysvalue.get(1);}
+	public int oid(){return keysvalue.get(2);}
+	public int number(){return keysvalue.get(3);}
 	public Integer iid(){return r.getInt("ol_i_id");};
 	public java.util.Date deliveryd(){return r.getTimestamp("ol_delivery_d");};
 	public java.math.BigDecimal amount(){return r.getDecimal("ol_amount");};

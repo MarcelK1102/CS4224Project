@@ -11,8 +11,13 @@ CREATE TABLE warehouse (
     W_STATE VARCHAR, 
     W_ZIP VARCHAR,
     W_TAX DECIMAL,
-    W_YTD DECIMAL,
     PRIMARY KEY(W_ID)
+);
+
+CREATE TABLE warehouse_cnts (
+    W_ID INT,
+    W_YTD counter,
+    PRIMARY KEY (W_ID)
 );
 
 CREATE TABLE district ( 
@@ -25,9 +30,15 @@ CREATE TABLE district (
     D_STATE VARCHAR, 
     D_ZIP VARCHAR,
     D_TAX DECIMAL,
-    D_YTD DECIMAL,
-    D_NEXT_O_ID INT,
     PRIMARY KEY( (D_ID), D_W_ID )
+);
+
+CREATE TABLE district_cnts (
+    D_W_ID INT,
+    D_ID INT,
+    D_YTD COUNTER,
+    D_NEXT_O_ID COUNTER,
+    PRIMARY KEY( (D_W_ID), D_ID )
 );
 
 CREATE TABLE customer ( 
@@ -47,23 +58,28 @@ CREATE TABLE customer (
     C_CREDIT VARCHAR,
     C_CREDIT_LIM DECIMAL,
     C_DISCOUNT DECIMAL,
-    C_BALANCE DECIMAL,
-    C_YTD_PAYMENT FLOAT,
-    C_PAYMENT_CNT INT,
-    C_DELIVERY_CNT INT,
     C_DATA VARCHAR,
     PRIMARY KEY( (C_D_ID), C_W_ID, C_ID)
 );
 
-create materialized view customer_by_balance 
-as select C_BALANCE, C_ID, C_W_ID, C_D_ID
-from customer
-where C_BALANCE is not null
-and C_ID is not null
-and C_W_ID is not null
-and C_D_ID is not null
-primary key ((C_D_ID), C_BALANCE, C_ID, C_W_ID)
-with clustering order by (C_BALANCE DESC);
+CREATE TABLE customer_top_ten (
+    C_W_ID INT,
+    C_D_ID INT,
+    C_ID INT,
+    C_BALANCE BIGINT,
+    PRIMARY KEY( (C_D_ID), C_W_ID, C_ID)
+);
+
+CREATE TABLE customer_cnts (
+    C_W_ID INT,
+    C_D_ID INT,
+    C_ID INT,
+    C_BALANCE COUNTER,
+    C_YTD_PAYMENT COUNTER,
+    C_PAYMENT_CNT COUNTER,
+    C_DELIVERY_CNT COUNTER,
+    PRIMARY KEY( (C_D_ID), C_W_ID, C_ID)
+);
 
 CREATE TABLE orders ( 
     O_W_ID INT, 

@@ -17,7 +17,7 @@ public abstract class tablebase {
 	protected Assignments assigns;
 	private final String tablename;
 	private final List<String> keysname;
-	private List<Integer> keysvalue;
+	protected List<Integer> keysvalue;
 
 	public tablebase(String tablename, List<String> keysname){this.tablename = tablename; this.keysname = keysname; assigns = QueryBuilder.update(tablename).with();}
 

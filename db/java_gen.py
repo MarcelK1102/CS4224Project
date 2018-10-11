@@ -94,7 +94,10 @@ for statement in buf.split(");"):
 	f.write("import com.datastax.driver.core.querybuilder.QueryBuilder;\n")
 	f.write("public class {} extends tablebase{{\n".format(tablename))
 	f.write('\tprivate static final List<String> primarykeys = Arrays.asList({});\n'.format(",".join('"{}"'.format(k) for k in primarykeys)))
+	for i, k in enumerate(primarykeys):
+		f.write("\tpublic int {}(){{return keysvalue.get({});}}\n".format("".join(k.split('_')[1:]),i))
 	for i, (k,v) in enumerate(columns.items()):
+		if i < len(primarykeys):continue
 		f.write('\tpublic {} {}(){{return r.{}("{}");}};\n'.format(v, "".join(k.split('_')[1:]), fs[v], k))
 	for i, (k,v) in enumerate(columns.items()):
 		f.write('\tpublic void set_{}({} value){{assigns.and(QueryBuilder.set("{}",value));}};\n'.format("".join(k.split('_')[1:]), v, k))

@@ -5,7 +5,7 @@ import java.util.List;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 public class warehouse extends tablebase{
 	private static final List<String> primarykeys = Arrays.asList("w_id");
-	public Integer id(){return r.getInt("w_id");};
+	public int id(){return keysvalue.get(0);}
 	public java.lang.String name(){return r.getString("w_name");};
 	public java.lang.String street1(){return r.getString("w_street_1");};
 	public java.lang.String street2(){return r.getString("w_street_2");};
@@ -13,7 +13,6 @@ public class warehouse extends tablebase{
 	public java.lang.String state(){return r.getString("w_state");};
 	public java.lang.String zip(){return r.getString("w_zip");};
 	public java.math.BigDecimal tax(){return r.getDecimal("w_tax");};
-	public java.math.BigDecimal ytd(){return r.getDecimal("w_ytd");};
 	public void set_id(Integer value){assigns.and(QueryBuilder.set("w_id",value));};
 	public void set_name(java.lang.String value){assigns.and(QueryBuilder.set("w_name",value));};
 	public void set_street1(java.lang.String value){assigns.and(QueryBuilder.set("w_street_1",value));};
@@ -22,7 +21,6 @@ public class warehouse extends tablebase{
 	public void set_state(java.lang.String value){assigns.and(QueryBuilder.set("w_state",value));};
 	public void set_zip(java.lang.String value){assigns.and(QueryBuilder.set("w_zip",value));};
 	public void set_tax(java.math.BigDecimal value){assigns.and(QueryBuilder.set("w_tax",value));};
-	public void set_ytd(java.math.BigDecimal value){assigns.and(QueryBuilder.set("w_ytd",value));};
 	public warehouse(){super("warehouse", primarykeys);}
 	public warehouse (Integer id, String ... attr) {this(); find(id, attr);}
 	public Row find(Integer id, String ... attr){return super.find(Arrays.asList(id), attr); }}

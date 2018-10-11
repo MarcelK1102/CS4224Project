@@ -5,7 +5,7 @@ import java.util.List;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 public class item extends tablebase{
 	private static final List<String> primarykeys = Arrays.asList("i_id");
-	public Integer id(){return r.getInt("i_id");};
+	public int id(){return keysvalue.get(0);}
 	public java.lang.String name(){return r.getString("i_name");};
 	public java.math.BigDecimal price(){return r.getDecimal("i_price");};
 	public Integer imid(){return r.getInt("i_im_id");};

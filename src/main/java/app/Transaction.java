@@ -12,8 +12,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.ResultSet;
@@ -21,12 +21,40 @@ import com.datastax.driver.core.Row;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 
 import app.wrapper.customer;
+import app.wrapper.customer_cnts;
 import app.wrapper.district;
+import app.wrapper.district_cnts;
 import app.wrapper.item;
 import app.wrapper.stock_cnts;
 import app.wrapper.warehouse;
+import app.wrapper.warehouse_cnts;
 
 public class Transaction {
+
+    private static void checkTopCustomer(customer_cnts cc){
+        List<Row> customers = Connector.s.execute(QueryBuilder.select().all().from("customer_top_ten"))
+            .all().stream()
+            .sorted( (r1, r2) -> Long.compare(r1.getLong("C_BALANCE"), r2.getLong("C_BALANCE")))
+            .collect(Collectors.toList());
+        if(customers.isEmpty() || cc.balance() > customers.get(0).getLong("C_BALANCE")){
+            Connector.s.execute(QueryBuilder.insertInto("customer_top_ten")
+                .value("C_W_ID", cc.wid())
+                .value("C_D_ID", cc.did())
+                .value("C_ID", cc.id())
+                .value("C_BALANCE", cc.balance()));
+            if(customers.size() >= 10) {
+                for(int i = 0; i < customers.size() - 9; i++) {
+                    Connector.s.execute(QueryBuilder
+                        .delete()
+                        .from("customer_top_ten")
+                        .where()
+                        .and(QueryBuilder.eq("C_W_ID", customers.get(i).getInt("C_W_ID")))
+                        .and(QueryBuilder.eq("C_D_ID", customers.get(i).getInt("C_D_ID")))
+                        .and(QueryBuilder.eq("C_ID", customers.get(i).getInt("C_ID"))));
+                }
+            }
+        }
+    }
 
     //Transaction 1
     public static void newOrder(int wid, int did, int cid, List<Integer> ids, List<Integer> wids, List<Integer> quantities ) throws NoSuchElementException{
@@ -35,19 +63,21 @@ public class Transaction {
         System.out.println(c);
         
         //Step P:1
-        district d = new district(wid, did, "D_TAX");
-        BigDecimal dtax = d.tax();
-        int N; 
+        district_cnts dc = new district_cnts(wid, did, "D_NEXT_O_ID"); 
+        long N ;
         
-        //https://stackoverflow.com/questions/3935915/how-to-create-auto-increment-ids-in-cassandra/29391877#29391877
         //Step P:
         do{
-            d.find(wid, did, "D_NEXT_O_ID");
-            N = d.nextoid() + 1;
-            d.set_nextoid(N);
-        } while(!d.update(QueryBuilder.eq("D_NEXT_O_ID", N-1)));
+            N = dc.nextoid() + 1;
+            Connector.s.execute(Connector.s.prepare(
+                    "update district_cnts set D_NEXT_O_ID = D_NEXT_O_ID + 1 where D_W_ID = :d and D_ID = :d;"
+                ).bind(wid, did));
+            dc.find(wid, did, "D_NEXT_O_ID");
+        } while(N != dc.nextoid());
 
         //Step O:2
+        district d = new district(wid, did, "D_TAX");
+        BigDecimal dtax = d.tax();
         BigDecimal wtax = new warehouse(wid, "W_TAX").tax();
         System.out.println("w_tax : " + wtax + ", d_tax : " + dtax);
 
@@ -77,10 +107,10 @@ public class Transaction {
             int iid = ids.get(i);
             //step P:a
             s.find(wid, iid, "S_QUANTITY");
-            
+            long restock = s.quantity() - quantities.get(i) < 10 ? 100 : 0;
             batchStock.add(Connector.s.prepare(
                     "update stock_cnts set S_QUANTITY = S_QUANTITY - :d, S_YTD = S_YTD + :d, S_ORDER_CNT = S_ORDER_CNT + 1, S_REMOTE_CNT = S_REMOTE_CNT + :d where S_W_ID = :d and S_I_ID = :d;"
-                ).bind((long)quantities.get(i) + (s.quantity() - quantities.get(i) < 10 ? 100 : 0), (long) quantities.get(i), (long) (wid != wids.get(i) ? 1 : 0), wid, iid)
+                ).bind((long)quantities.get(i) + restock, (long) quantities.get(i), (long) (wid != wids.get(i) ? 1 : 0), wid, iid)
             );
             
             //Step P:e
@@ -95,8 +125,8 @@ public class Transaction {
             System.out.println("i_name : " + it.name());
             System.out.println("supplier_warehouse : " + wids.get(i));
             System.out.println("quantity : " + quantities.get(i));
-            System.out.println("ol_amount : " + itemAmount);
-            // System.out.println("s_quantity : " + oldquantity);
+            System.out.println("ol_amount : " + itemAmount); 
+            System.out.println("s_quantity : " + (s.quantity() - quantities.get(i) + restock));
 
             //Step P:g
             batchOL.add(QueryBuilder.insertInto("order_line")
@@ -123,40 +153,32 @@ public class Transaction {
 
     //Transaction 2
     public static void paymentTransaction(int cwid, int cdid, int cid, BigDecimal payment) {
-        warehouse w = new warehouse();
-        BigDecimal oldYtd, oldBal;
-        Float oldYtdPayment;
-        Integer oldPayment;
-        //Step 1      
-        do {
-            w.find(cwid,"W_STREET_1","W_STREET_2","W_CITY","W_STATE","W_ZIP", "W_YTD");
-            oldYtd = w.ytd();
-            w.set_ytd(payment.add(w.ytd()));
-        } while(!w.update(QueryBuilder.eq("W_YTD", oldYtd)));
+        //Step 1   
+        Connector.s.execute(Connector.s.prepare(
+                "update warehouse_cnts set W_YTD = W_YTD + :d where W_ID = :d;"
+            ).bind(payment.longValue(), cwid));
 
-        district d = new district();
-        
         //Step 2
-        do{
-            d.find(cwid, cdid,"D_STREET_1","D_STREET_2","D_CITY","D_STATE","D_ZIP", "D_YTD");
-            oldYtd = d.ytd();
-            d.set_ytd(payment.add(oldYtd));
-        } while(!d.update(QueryBuilder.eq("D_YTD", oldYtd)));
+        Connector.s.execute(Connector.s.prepare(
+                "update district_cnts set D_YTD = D_YTD + :d where D_W_ID = :d and D_ID = :d;"
+            ).bind(payment.longValue(), cwid, cdid));
+
         //Step 3
-        customer c = new customer();
-        do {
-            c.find(cwid, cdid, cid);
-            oldYtdPayment = c.ytdpayment();
-            oldBal = c.balance();
-            oldPayment = c.paymentcnt();
-            c.set_balance(oldBal.subtract(payment));
-            c.set_ytdpayment(oldYtdPayment + payment.floatValue());
-            c.set_paymentcnt(oldPayment + 1);
-        } while(!c.update(QueryBuilder.eq("C_BALANCE", oldBal), QueryBuilder.eq("C_YTD_PAYMENT", oldYtdPayment), QueryBuilder.eq("C_PAYMENT_CNT", oldPayment)));
         
-        System.out.println(w);
-        System.out.println(d);
-        System.out.println(c);
+        Connector.s.execute(Connector.s.prepare(
+                "update customer_cnts set C_BALANCE = C_BALANCE - :d, C_YTD_PAYMENT = C_YTD_PAYMENT + :d, C_PAYMENT_CNT = C_PAYMENT_CNT + 1 where C_W_ID = :d and C_D_ID = :d and C_ID = :d;"
+            ).bind(payment.longValue(), payment.longValue(), cwid, cdid, cid));
+           
+        warehouse w = new warehouse(cwid, "W_STREET_1","W_STREET_2","W_CITY","W_STATE","W_ZIP");
+        warehouse_cnts wc = new warehouse_cnts(cwid);
+        System.out.println(w + ", " + wc);
+        district d = new district(cwid, cdid, "D_STREET_1","D_STREET_2","D_CITY","D_STATE","D_ZIP");
+        district_cnts dc = new district_cnts(cwid, cdid);
+        System.out.println(d + ", " + dc);
+        customer c = new customer(cwid, cdid, cid);
+        customer_cnts cc = new customer_cnts(cwid, cdid, cid);
+        checkTopCustomer(cc);
+        System.out.println(c + ", " + cc);
         System.out.println("Payment: " + payment);
     }
 
@@ -192,8 +214,6 @@ public class Transaction {
                 continue;
             }
             int cid = X.getInt("O_C_ID");
-            customer c = new customer(wid, districtNo, cid);
-            // Row C = Wrapper.findCustomer(wid, districtNo, cid);
 
             //b)
             Connector.s.execute(QueryBuilder.update(Connector.keyspace, "orders")
@@ -223,10 +243,6 @@ public class Transaction {
             }
 
             //d)
-            int old_cnt = c.deliverycnt();
-            BigDecimal c_balance = c.balance();
-
-
             BigDecimal B = Connector.s.execute(QueryBuilder.select()
             .sum("OL_AMOUNT")
             .from("order_line")
@@ -234,22 +250,21 @@ public class Transaction {
             .and(QueryBuilder.eq("OL_O_ID", N))
             .and(QueryBuilder.eq("OL_D_ID", districtNo))
             ).one().getDecimal(0);
-            do{
-                c.find(wid, districtNo, cid);
-                c_balance = c.balance();
-                old_cnt = c.deliverycnt();
-                c.set_balance(c_balance.add(B));
-                c.set_deliverycnt(old_cnt + 1);
-            } while(!c.update(QueryBuilder.eq("C_DELIVERY_CNT", old_cnt)));
+
+            Connector.s.execute(Connector.s.prepare(
+                "update customer_cnts set C_BALANCE = C_BALANCE + :d, C_DELIVERY_CNT = C_DELIVERY_CNT + 1 where C_W_ID = :d and C_D_ID = :d and C_ID = :d;"
+            ).bind(B.longValue(), wid, districtNo, cid));
+            checkTopCustomer(new customer_cnts(wid, districtNo, cid));
         }
     }
 
     //Transaction 4
     public static void getOrderStatus(int c_wid, int c_did, int cid) throws InvalidKeyException{
         //1.
-        Row C = Wrapper.findCustomer(c_wid, c_did, cid);
-        System.out.println(String.format("Name: %s %s %s",C.getString("C_FIRST"), C.getString("C_MIDDLE"), C.getString("C_LAST")));
-        System.out.println("Balance: " + C.getDecimal("C_BALANCE"));
+        customer c = new customer(c_wid, c_did, cid);
+        customer_cnts cc = new customer_cnts(c_wid, c_did, cid);
+        checkTopCustomer(cc);
+        System.out.println(c + ", " +cc);
 
         //2.
         java.util.Date lastOrderDate = Connector.s.execute(QueryBuilder.select()
@@ -297,7 +312,7 @@ public class Transaction {
     //Transaction 5
     public static void stockLevel(int wid, int did, long t, int l) {
         //Step 1
-        int N = Wrapper.findDistrict(wid, did, "D_NEXT_O_ID").getInt(0);
+        long N = new district_cnts(wid, did, "D_NEXT_O_ID").nextoid();
 
         //Step 2
         List<Integer> itemids = Connector.s.execute(QueryBuilder
@@ -321,13 +336,7 @@ public class Transaction {
     public static void popularItem(int wid, int did, int L) {
         //Row district = Wrapper.findDistrict(wid,did).orElseThrow(() -> new TransactionException("Unable to find customer with id:" + wid));
         //P:Step 1
-        Row district = Connector.s.execute(QueryBuilder
-                .select().all()
-                .from(Connector.keyspace, "district")
-                .where(QueryBuilder.eq("D_ID",did))
-                .and(QueryBuilder.eq("D_W_ID",wid)))
-                .one();
-        int N = district.getInt("D_NEXT_O_ID");
+        long N = new district_cnts(wid, did, "D_NEXT_O_ID").nextoid();
         
         //P:Step 2
         ResultSet S = Connector.s.execute(QueryBuilder
@@ -426,38 +435,32 @@ public class Transaction {
     
     //Transaction 7
     public static void topBalance(){
-        List<Row> rows = new ArrayList<>(100);
         //processing: step 1
-        IntStream.rangeClosed(1, 10).forEach(i -> {
-            rows.addAll(
-                Connector.s.execute(QueryBuilder
-                    .select()
-                    .from("customer_by_balance")
-                    .where(QueryBuilder.eq("C_D_ID", i))
-                    .limit(10)
-                ).all()
-            );
-        });
+        List<Row> rows = Connector.s.execute(QueryBuilder
+            .select().all()
+            .from("customer_top_ten")
+        ).all();
 
         //Output: step 1
         rows.stream()
-            .sorted((r1, r2) -> r2.getDecimal("C_BALANCE").compareTo(r1.getDecimal("C_BALANCE")))
+            .sorted((r1, r2) -> Long.compare(r2.getLong("C_BALANCE"), r2.getLong("C_BALANCE")))
             .limit(10)
             .forEach(r ->{
                 //a
-                Row c = Wrapper.findCustomer(r.getInt("C_W_ID"), r.getInt("C_D_ID"), r.getInt("C_ID"), "C_FIRST", "C_MIDDLE", "C_LAST");
-                System.out.printf("Name: %s %s %s, ", c.getString(0), c.getString(1), c.getString(2));
+                customer c = new customer(r.getInt("C_W_ID"), r.getInt("C_D_ID"), r.getInt("C_ID"), "C_FIRST", "C_MIDDLE", "C_LAST");
+                System.out.println(c);
 
                 //b
-                System.out.printf("Balance: %s, ", r.getDecimal("C_BALANCE"));
+                customer_cnts cc = new customer_cnts(r.getInt("C_W_ID"), r.getInt("C_D_ID"), r.getInt("C_ID"), "C_BALANCE");
+                System.out.println(cc);
 
                 //c
-                c = Wrapper.findWarehouse(r.getInt("C_W_ID"), "W_NAME");
-                System.out.printf("Warehouse name: %s, ", c.getString(0));
+                warehouse w = new warehouse(r.getInt("C_W_ID"), "W_NAME");
+                System.out.println(w);
 
                 //d
-                c = Wrapper.findDistrict(r.getInt("C_W_ID"), r.getInt("C_D_ID"), "D_NAME");
-                System.out.printf("District name: %s\n",  c.getString(0));
+                district  d = new district(r.getInt("C_W_ID"), r.getInt("C_D_ID"), "D_NAME");
+                System.out.println(d);
 
             });
 
@@ -496,7 +499,7 @@ public class Transaction {
                 .and(QueryBuilder.eq("OL_I_ID", item.getInt("OL_I_ID")))
                 .and(QueryBuilder.gt("OL_W_ID", cwid))
                 ).iterator());
-                otherorders.add(Connector.s.execute(QueryBuilder.select("OL_O_ID")
+                otherorders.add(Connector.s.execute(QueryBuilder.select("OL_O_ID", "OL_W_ID", "OL_D_ID")
                     .from("order_line_by_item")
                     .where(QueryBuilder.eq("OL_D_ID", cdid))
                     .and(QueryBuilder.eq("OL_I_ID", item.getInt("OL_I_ID")))

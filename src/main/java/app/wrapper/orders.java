@@ -5,9 +5,9 @@ import java.util.List;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 public class orders extends tablebase{
 	private static final List<String> primarykeys = Arrays.asList("o_w_id","o_d_id","o_id");
-	public Integer wid(){return r.getInt("o_w_id");};
-	public Integer did(){return r.getInt("o_d_id");};
-	public Integer id(){return r.getInt("o_id");};
+	public int wid(){return keysvalue.get(0);}
+	public int did(){return keysvalue.get(1);}
+	public int id(){return keysvalue.get(2);}
 	public Integer cid(){return r.getInt("o_c_id");};
 	public Integer carrierid(){return r.getInt("o_carrier_id");};
 	public java.math.BigDecimal olcnt(){return r.getDecimal("o_ol_cnt");};

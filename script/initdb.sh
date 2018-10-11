@@ -16,7 +16,19 @@ echo -e "S_W_ID, S_I_ID, S_QUANTITY, S_YTD, S_ORDER_CNT, S_REMOTE_CNT, S_DIST_01
 awk 'BEGIN{FS=OFS=","} {print $1,$2,$3,$4,$5,$6}' stock.csv > stock_cnts.csv
 awk 'BEGIN{FS=OFS=","} {print $1,$2,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17}' stock.csv > stock_data.csv
 
+awk 'BEGIN{FS=OFS=","} {print $1,$9}' warehouse.csv > warehouse_cnts.csv
+awk 'BEGIN{FS=OFS=","} {print $1,$2,$3,$4,$5,$6,$7,$8}' warehouse.csv > warehouse_data.csv
+
+awk 'BEGIN{FS=OFS=","} {print $1,$2,$10,$11}' district.csv > district_cnts.csv
+awk 'BEGIN{FS=OFS=","} {print $1,$2,$3,$4,$5,$6,$7,$8,$9}' district.csv > district_data.csv
+
+awk 'BEGIN{FS=OFS=","} {print $1,$2,$3,$17,$18,$19,$20}' customer.csv > customer_cnts.csv
+awk 'BEGIN{FS=OFS=","} {print $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$21}' customer.csv > customer_data.csv
+
 sed -i -e 's/\.0//g' stock_cnts.csv
+sed -i -e 's/\.0//g' warehouse_cnts.csv
+sed -i -e 's/\.0//g' district_cnts.csv
+sed -i -e 's/\.0//g' customer_cnts.csv
 sed -i -e 's/,null,/,,/g' *.csv
 /temp/$CASSANDRA/bin/cqlsh $MASTER -f ~/createDB.cql
 /temp/$CASSANDRA/bin/cqlsh $MASTER -f ~/insertDB.cql

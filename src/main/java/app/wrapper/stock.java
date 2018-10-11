@@ -5,8 +5,8 @@ import java.util.List;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 public class stock extends tablebase{
 	private static final List<String> primarykeys = Arrays.asList("s_w_id","s_i_id");
-	public Integer wid(){return r.getInt("s_w_id");};
-	public Integer iid(){return r.getInt("s_i_id");};
+	public int wid(){return keysvalue.get(0);}
+	public int iid(){return keysvalue.get(1);}
 	public java.lang.String dist01(){return r.getString("s_dist_01");};
 	public java.lang.String dist02(){return r.getString("s_dist_02");};
 	public java.lang.String dist03(){return r.getString("s_dist_03");};
