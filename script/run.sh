@@ -1,5 +1,5 @@
 #!/bin/bash
-JAR=../build/libs/cs4224-project-all.jar #path to jar
+JAR=../app.jar #path to jar
 MASTER=192.168.48.249
 SEEDS=${MASTER},192.168.48.250,192.168.48.251,192.168.48.252,192.168.48.253 #ip of all nodes
 CLUSTER_NAME=cs4224g
@@ -11,7 +11,7 @@ scp $JAR $CLUSTER_NAME@$MASTER:~/app.jar
 
 IFS=', ' read -r -a array <<< $SEEDS
 for i in $(seq 1 $NC); do
-	ssh $CLUSTER_NAME@${array[$(( ($i - 1) % 5 ))]} "java -jar ~/app.jar $CONSISTENCY < $XACT/$i.txt > ~/$i.out" &
+	ssh $CLUSTER_NAME@${array[$(( ($i - 1) % 5 ))]} "java -jar ~/app.jar $CONSISTENCY < $XACT/$i.txt > ~/$i.out && tail $i.out >> stats.out && echo 'Transaction $i done'" &
 done
 
 wait
