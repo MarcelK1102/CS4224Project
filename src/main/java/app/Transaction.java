@@ -26,6 +26,8 @@ import com.datastax.driver.core.querybuilder.QueryBuilder;
 import app.wrapper.customer;
 import app.wrapper.district;
 import app.wrapper.item;
+import app.wrapper.stock;
+import app.wrapper.stock_cnts;
 import app.wrapper.warehouse;
 
 public class Transaction {
@@ -96,13 +98,15 @@ public class Transaction {
         //Step P:5
         BatchStatement batchOL = new BatchStatement();
         BatchStatement batchStock = new BatchStatement();
+        stock_cnts s = new stock_cnts();
         for(int i = 0; i < ids.size(); i++){
             int iid = ids.get(i);
             //step P:a
-
+            s.find(wid, iid, "S_QUANTITY");
+            
             batchStock.add(Connector.s.prepare(
-                    "update stock_cnts set S_QUANTITY = S_QUANTITY - :d, S_YTD = S_YTD - :d, S_ORDER_CNT = S_ORDER_CNT + 1, S_REMOTE_CNT = S_REMOTE_CNT + :d where S_W_ID = :d and S_I_ID = :d;"
-                ).bind((long)quantities.get(i), (long) quantities.get(i), (long) (wid != wids.get(i) ? 1 : 0), wid, iid)
+                    "update stock_cnts set S_QUANTITY = S_QUANTITY - :d, S_YTD = S_YTD + :d, S_ORDER_CNT = S_ORDER_CNT + 1, S_REMOTE_CNT = S_REMOTE_CNT + :d where S_W_ID = :d and S_I_ID = :d;"
+                ).bind((long)quantities.get(i) + (s.quantity() - quantities.get(i) < 10 ? 100 : 0), (long) quantities.get(i), (long) (wid != wids.get(i) ? 1 : 0), wid, iid)
             );
             
             //Step P:e

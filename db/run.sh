@@ -11,15 +11,16 @@ NC=$1
 # ssh ${CLUSTER_NAME}@${MASTER} mkdir -p .ssh #DO THIS IF NOT DONE
 # cat ~/.ssh/id_rsa.pub | ssh ${CLUSTER_NAME}@${MASTER} 'cat >> ~/.ssh/authorized_keys'
 scp $JAR $CLUSTER_NAME@$MASTER:~/app.jar
+
+# control_c() {
+#     for i in $(echo $SEEDS | sed "s/,/ /g")
+# 	do
+# 		ssh $CLUSTER_NAME@${i} "ps aux | grep app.jar | awk '{print \$2}' | xargs kill -9"
+# 	done
+#     exit
+# }
+# trap control_c SIGINT
 IFS=', ' read -r -a array <<< $SEEDS
-control_c() {
-    for i in $(echo $SEEDS | sed "s/,/ /g")
-	do
-		ssh $CLUSTER_NAME@${i} "ps aux | grep app.jar | awk '{print \$2}' | xargs kill -9"
-	done
-    exit
-}
-trap control_c SIGINT
 for i in $(seq 1 $NC); do
 	ssh $CLUSTER_NAME@${array[$(( ($i - 1) % 5 ))]} "java -jar ~/app.jar $CONSISTENCY < $XACT/$i.txt > ~/$i.out" &
 done
