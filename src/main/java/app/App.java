@@ -12,6 +12,9 @@ public class App {
         int limit = args.length > 1 ? Integer.parseInt(args[1]) : -1;
         // BasicConfigurator.configure();
         try{
+            System.out.println("start Delivery");
+            Transaction.processDelivery(5, 7);
+            System.out.println("finished Delivery");
             Transaction.handleInput(limit);
         } finally {
             Connector.close();
