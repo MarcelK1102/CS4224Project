@@ -1,8 +1,5 @@
 package app;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.security.InvalidKeyException;
 import java.time.Instant;
@@ -26,36 +23,13 @@ import com.datastax.driver.core.querybuilder.QueryBuilder;
 import app.wrapper.customer;
 import app.wrapper.district;
 import app.wrapper.item;
-import app.wrapper.stock;
 import app.wrapper.stock_cnts;
 import app.wrapper.warehouse;
 
 public class Transaction {
-    public static int nxact = 0;
-    public static long startTime;
-    public static long endTime;
-    public static int counts[] = new int[256];
-    public static long times[] = new long[256];
-    //Task 2 take input
-    public static void handleInput(int limit) {
-        try{
-            char []buf = new char[2];
-            startTime = System.currentTimeMillis();
-            while(bi.read(buf, 0, 2) > 0 && limit-- != 0){
-                System.out.println(buf[0]);
-                long start = System.currentTimeMillis();
-                fs.get(buf[0]).run();
-                times[buf[0]] += System.currentTimeMillis() - start; 
-                counts[buf[0]]++;
-                nxact++;
-            }
-            endTime = System.currentTimeMillis();
-        }catch(IOException ioe){System.out.println("Unable to handle input: "); ioe.printStackTrace();}
-        System.out.println("Ended input");
-    }
 
     //Transaction 1
-    private static void newOrder(int wid, int did, int cid, List<Integer> ids, List<Integer> wids, List<Integer> quantities ) throws NoSuchElementException{
+    public static void newOrder(int wid, int did, int cid, List<Integer> ids, List<Integer> wids, List<Integer> quantities ) throws NoSuchElementException{
         //Step O:1
         customer c = new customer(wid, did, cid, "C_W_ID" , "C_W_ID", "C_ID", "C_LAST", "C_CREDIT", "C_DISCOUNT");
         System.out.println(c);
@@ -185,11 +159,9 @@ public class Transaction {
         System.out.println(c);
         System.out.println("Payment: " + payment);
     }
+
     //Transaction 3
-    public static long processDeliveryTimes[] = new long[8];
     public static void processDelivery(int wid, int carrierid) {
-        
-        
         for (int districtNo = 1; districtNo <= 10; districtNo++){
             ArrayList<Integer> oids = new ArrayList<>();
 
@@ -271,6 +243,7 @@ public class Transaction {
             } while(!c.update(QueryBuilder.eq("C_DELIVERY_CNT", old_cnt)));
         }
     }
+
     //Transaction 4
     public static void getOrderStatus(int c_wid, int c_did, int cid) throws InvalidKeyException{
         //1.
@@ -320,8 +293,9 @@ public class Transaction {
             System.out.println("OL_DELIVERY_D:"  + currOL.getTimestamp("OL_DELIVERY_D"));
         }
     }
+
     //Transaction 5
-    private static void stockLevel(int wid, int did, long t, int l) {
+    public static void stockLevel(int wid, int did, long t, int l) {
         //Step 1
         int N = Wrapper.findDistrict(wid, did, "D_NEXT_O_ID").getInt(0);
 
@@ -449,8 +423,9 @@ public class Transaction {
 
         }
     }
+    
     //Transaction 7
-    private static void topBalance(){
+    public static void topBalance(){
         List<Row> rows = new ArrayList<>(100);
         //processing: step 1
         IntStream.rangeClosed(1, 10).forEach(i -> {
@@ -548,102 +523,5 @@ public class Transaction {
                 }
             }
         }
-    }
-
-    private static BufferedReader bi = new BufferedReader(new InputStreamReader(System.in));
-    public static final Map<Character, Runnable> fs = new HashMap<>();
-    static {
-        //Transaction (a)
-        fs.put('N', () -> {
-            String []input;
-            try{input = bi.readLine().split(",");} catch(IOException ioe) {ioe.printStackTrace(); return;}
-            int cid = Integer.parseInt(input[0]);
-            int wid = Integer.parseInt(input[1]);
-            int did = Integer.parseInt(input[2]);
-            int m = Integer.parseInt(input[3]);
-            List<Integer> ids = new ArrayList<>(m);
-            List<Integer> wids = new ArrayList<>(m);
-            List<Integer> quantities = new ArrayList<>(m);
-            for(int i = 0; i < m; i++){
-                try{input = bi.readLine().split(",");} catch(IOException ioe) {ioe.printStackTrace(); return;}
-                ids.add(i, Integer.parseInt(input[0]));
-                wids.add(i, Integer.parseInt(input[1]));
-                quantities.add(i, Integer.parseInt(input[2]));
-            }
-            try { newOrder(wid, did, cid, ids, wids, quantities); }
-            catch(Exception e){ System.out.println("Unable to perform newOrder transaction" ); e.printStackTrace();}
-        });
-
-        // //Transaction (b)
-        fs.put('P', () -> {
-            String []input;
-            try{input = bi.readLine().split(",");} catch(IOException ioe) {ioe.printStackTrace(); return;}
-            int wid = Integer.parseInt(input[0]);
-            int did = Integer.parseInt(input[1]);
-            int cid = Integer.parseInt(input[2]);
-            BigDecimal payment = new BigDecimal(input[3]);
-            try { paymentTransaction(wid, did, cid, payment); }
-            catch(Exception e){ System.out.println("Unable to perform payment transaction"); e.printStackTrace();}
-        });
-
-        // //Transaction (c)
-        fs.put('D', () -> {
-            String []input;
-            try{input = bi.readLine().split(",");} catch(IOException ioe) {ioe.printStackTrace(); return;}
-            int wid = Integer.parseInt(input[0]);
-            int carrierid = Integer.parseInt(input[1]);
-            try{ processDelivery(wid, carrierid); }
-            catch(Exception e) { System.out.println("Unable to perform Delivery transaction"); e.printStackTrace(); }
-        });
-
-        // //Transaction (d)
-        fs.put('O', () -> {
-            String []input;
-            try{input = bi.readLine().split(",");} catch(IOException ioe) {ioe.printStackTrace(); return;}
-            int wid = Integer.parseInt(input[0]);
-            int did = Integer.parseInt(input[1]);
-            int cid = Integer.parseInt(input[2]);
-            try{ getOrderStatus(wid, did, cid); }
-            catch(Exception e) { System.out.println("Unable to perform Order-Status" ); e.printStackTrace(); }
-        });
-
-        // //Transaction (e)
-        fs.put('S', () -> {
-            String []input;
-            try{input = bi.readLine().split(",");} catch(IOException ioe) {ioe.printStackTrace(); return;}
-            int wid = Integer.parseInt(input[0]);
-            int did = Integer.parseInt(input[1]);
-            long T = Long.parseLong(input[2]);
-            int L = Integer.parseInt(input[3]);
-            try{ stockLevel(wid, did, T, L); }
-            catch(Exception e) { System.out.println("Unable to perform Stock-Level"); e.printStackTrace();}
-        });
-
-        // //Transaction (f)
-        fs.put('I', () -> {
-            String []input;
-            try{input = bi.readLine().split(",");} catch(IOException ioe) {ioe.printStackTrace(); return;}
-            int wid = Integer.parseInt(input[0]);
-            int did = Integer.parseInt(input[1]);
-            int L = Integer.parseInt(input[2]);
-            try{ popularItem(wid, did, L); }
-            catch(Exception e) { System.out.println("Unable to perform Popular-Item transaction"); e.printStackTrace();}
-        });
-
-        // //Transaction (g)
-        fs.put('T', () -> {
-            topBalance();
-        });
-
-        // //Transaction (h)
-        fs.put('R', () -> {
-            String []input;
-            try{input = bi.readLine().split(",");} catch(IOException ioe) {ioe.printStackTrace(); return;}
-            int wid = Integer.parseInt(input[0]);
-            int did = Integer.parseInt(input[1]);
-            int cid = Integer.parseInt(input[2]);
-            try{ relatedCustomer(wid, did, cid); }
-            catch(Exception e) { System.out.println("Unable to perform Related-Customer"); e.printStackTrace();}
-        });
     }
 }

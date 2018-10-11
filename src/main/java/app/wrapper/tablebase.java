@@ -25,7 +25,6 @@ public abstract class tablebase {
 		this.keysvalue = keysvalue;
 		Select.Where w = (attr.length > 0 ? QueryBuilder.select(attr) : QueryBuilder.select().all()).from(tablename).where();
 		for(int i = 0; i < keysname.size(); i++) {w.and(QueryBuilder.eq(keysname.get(i), keysvalue.get(i)));}
-		System.out.println(w);
 		this.r = Connector.s.execute(w).one();
 		if(r == null) throw new NoSuchElementException("Unable to find " + tablename + " with keys " + this.keysname + " and values " + this.keysvalue);
 		return r;
@@ -35,7 +34,6 @@ public abstract class tablebase {
 		Update.Where w = assigns.where(QueryBuilder.eq(keysname.get(0), keysvalue.get(0)));
 		for(int i = 1; i < keysname.size(); i++) {w.and(QueryBuilder.eq(keysname.get(i), keysvalue.get(i)));}		
 		for(Clause c : clauses) w.onlyIf(c);
-		System.out.println(w);
 		Row r = Connector.s.execute(w).one();
 		assigns = QueryBuilder.update(tablename).with();
 		if(r.getBool(0))

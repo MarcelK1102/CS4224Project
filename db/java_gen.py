@@ -1,6 +1,5 @@
 import re
 
-
 conv = {
 	"INT" : "Integer",
 	"ASCII" : "java.lang.String",
@@ -95,11 +94,6 @@ for statement in buf.split(");"):
 	f.write("import com.datastax.driver.core.querybuilder.QueryBuilder;\n")
 	f.write("public class {} extends tablebase{{\n".format(tablename))
 	f.write('\tprivate static final List<String> primarykeys = Arrays.asList({});\n'.format(",".join('"{}"'.format(k) for k in primarykeys)))
-	# f.write('\tprivate static final String tablename = "{}";\n'.format(tablename))
-	# f.write("\tprivate static final String names[] = new String[] {{{}}};\n".format(", ".join(['"%s"' % x for x in columns.keys()])))
-	# f.write("\tprivate static final int nkeys = {};\n".format(len(primarykeys)))
-	# f.write("\tprivate static final Map<String,Integer> namesi;\n")
-	# f.write("\tstatic {{namesi = new HashMap<String,Integer>();{} }}\n".format("".join(['namesi.put("{}",{});'.format(k, i) for i, k in enumerate(columns.keys())])))
 	for i, (k,v) in enumerate(columns.items()):
 		f.write('\tpublic {} {}(){{return r.{}("{}");}};\n'.format(v, "".join(k.split('_')[1:]), fs[v], k))
 	for i, (k,v) in enumerate(columns.items()):
@@ -112,14 +106,4 @@ for statement in buf.split(");"):
 	f.write("\tpublic Row find(%s, String ... attr){return super.find(Arrays.asList(%s), attr); }" %
 	 	(",".join(["{} {}".format(columns[k],"".join(k.split('_')[1:])) for k in primarykeys]),
 		 ",".join("".join(k.split('_')[1:]) for k in primarykeys)))
-	# f.write("\tpublic {}({}) {{ this(); {}; }}\n".format(tablename, 
-	# 	',\n\t\t'.join(['%s %s' % (value, key) for key,value in columns.items()]),
-	# 	';\n\t\t'.join(['this.%s = %s' % (key, key) for key,value in columns.items()])))
-	# f.write("\tpublic {}(Row r) throws NullPointerException {{this({});}}\n".format(
-	# 	tablename, ',\n\t\t'.join(['r.isNull("%s") ? null : r.%s("%s")' % (key, fs[value], key) for key,value in columns.items()])
-	# ))
-	
 	f.write("}\n\n")
-
-	
-

@@ -10,7 +10,7 @@ COPY warehouse (
     W_ZIP,
     W_TAX,
     W_YTD
-) FROM 'warehouse.csv';
+) FROM 'warehouse.csv'  WITH HEADER = TRUE;
 
 COPY district ( 
     D_W_ID, 
@@ -24,7 +24,7 @@ COPY district (
     D_TAX,
     D_YTD,
     D_NEXT_O_ID
-) FROM 'district.csv';
+) FROM 'district.csv'  WITH HEADER = TRUE;
 
 COPY customer ( 
     C_W_ID, 
@@ -48,7 +48,7 @@ COPY customer (
     C_PAYMENT_CNT,
     C_DELIVERY_CNT,
     C_DATA
-) FROM 'customer.csv';
+) FROM 'customer.csv'  WITH HEADER = TRUE;
 
 COPY orders ( 
     O_W_ID, 
@@ -59,7 +59,7 @@ COPY orders (
     O_OL_CNT, 
     O_ALL_LOCAL, 
     O_ENTRY_D
-) FROM 'order.csv';
+) FROM 'order.csv'  WITH HEADER = TRUE;
 
 COPY item ( 
     I_ID, 
@@ -67,7 +67,7 @@ COPY item (
     I_PRICE, 
     I_IM_ID, 
     I_DATA
-) FROM 'item.csv';
+) FROM 'item.csv'  WITH HEADER = TRUE;
 
 COPY order_line ( 
     OL_W_ID, 
@@ -80,7 +80,7 @@ COPY order_line (
     OL_SUPPLY_W_ID, 
     OL_QUANTITY, 
     OL_DIST_INFO
-) FROM 'order-line.csv';
+) FROM 'order-line.csv' WITH HEADER = TRUE ;
 
 COPY stock FROM 'stock_data.csv' WITH HEADER = TRUE ;
 
