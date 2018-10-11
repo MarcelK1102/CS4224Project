@@ -18,15 +18,14 @@ import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
-import com.datastax.driver.core.querybuilder.Batch;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 
 import app.wrapper.customer;
 import app.wrapper.district;
 import app.wrapper.item;
-import app.wrapper.stock;
 import app.wrapper.warehouse;
 
 public class Transaction {
@@ -52,40 +51,31 @@ public class Transaction {
         }catch(IOException ioe){System.out.println("Unable to handle input: "); ioe.printStackTrace();}
         System.out.println("Ended input");
     }
-    public static long newOrderTimes[] = new long[8];
+
     //Transaction 1
     private static void newOrder(int wid, int did, int cid, List<Integer> ids, List<Integer> wids, List<Integer> quantities ) throws NoSuchElementException{
         //Step O:1
-        long start = System.currentTimeMillis();
         customer c = new customer(wid, did, cid, "C_W_ID" , "C_W_ID", "C_ID", "C_LAST", "C_CREDIT", "C_DISCOUNT");
         System.out.println(c);
-        newOrderTimes[0] += System.currentTimeMillis() - start;
         
         //Step P:1
-        start = System.currentTimeMillis();
         district d = new district(wid, did, "D_TAX");
         BigDecimal dtax = d.tax();
         int N; 
-        newOrderTimes[1] += System.currentTimeMillis() - start;
         
         //https://stackoverflow.com/questions/3935915/how-to-create-auto-increment-ids-in-cassandra/29391877#29391877
         //Step P:
-        start = System.currentTimeMillis();
         do{
             d.find(wid, did, "D_NEXT_O_ID");
             N = d.nextoid() + 1;
             d.set_nextoid(N);
         } while(!d.update(QueryBuilder.eq("D_NEXT_O_ID", N-1)));
-        newOrderTimes[2] += System.currentTimeMillis() - start;
 
         //Step O:2
-        start = System.currentTimeMillis();
         BigDecimal wtax = new warehouse(wid, "W_TAX").tax();
         System.out.println("w_tax : " + wtax + ", d_tax : " + dtax);
-        newOrderTimes[3] += System.currentTimeMillis() - start;
 
         //Step P:3
-        start = System.currentTimeMillis();
         Date now = Date.from(Instant.now());
         Connector.s.executeAsync((QueryBuilder.insertInto("orders")
                 .value("O_ID", N)
@@ -96,41 +86,28 @@ public class Transaction {
                 .value("O_OL_CNT", BigDecimal.valueOf( ids.size())) 
                 .value("O_ALL_LOCAL", BigDecimal.valueOf(wids.stream().allMatch(i -> i == wid) ? 1 : 0))
         ));
-        newOrderTimes[4] += System.currentTimeMillis() - start;
 
         //Step O:3
         System.out.println("o_id : " + N + " o_entry_d : " + now);
 
         //Step P:4
-        BigDecimal totalAmount = BigDecimal.ZERO, quantity;
+        BigDecimal totalAmount = BigDecimal.ZERO;
         
         //Step P:5
-        Batch ba = QueryBuilder.batch();
+        BatchStatement batchOL = new BatchStatement();
+        BatchStatement batchStock = new BatchStatement();
         for(int i = 0; i < ids.size(); i++){
             int iid = ids.get(i);
             //step P:a
-            start = System.currentTimeMillis();
-            stock stk = new stock(); 
-            do{
-                stk.find(wid, iid,  "S_QUANTITY"," S_YTD"," S_ORDER_CNT"," S_REMOTE_CNT"," S_DIST_" + String.format("%02d", did));
-                //Step P:b
-                quantity = stk.quantity().subtract(BigDecimal.valueOf(quantities.get(i)));
-                quantity = quantity.add(BigDecimal.valueOf(quantity.doubleValue() < 10.0 ? 100.0 : 0.0));
-                //Step P:c
-                stk.set_quantity(quantity);
 
-                //Step P:d  
-                stk.set_ytd(stk.ytd().add(BigDecimal.valueOf(quantities.get(i))));
-                stk.set_ordercnt(stk.ordercnt() + 1);
-                stk.set_remotecnt(stk.remotecnt() + (wid != wids.get(i) ? 1 : 0));
-            } while(!stk.update(QueryBuilder.eq("S_QUANTITY", stk.quantity())));
-            newOrderTimes[5] += System.currentTimeMillis() - start;
+            batchStock.add(Connector.s.prepare(
+                    "update stock_cnts set S_QUANTITY = S_QUANTITY - :d, S_YTD = S_YTD - :d, S_ORDER_CNT = S_ORDER_CNT + 1, S_REMOTE_CNT = S_REMOTE_CNT + :d where S_W_ID = :d and S_I_ID = :d;"
+                ).bind((long)quantities.get(i), (long) quantities.get(i), (long) (wid != wids.get(i) ? 1 : 0), wid, iid)
+            );
             
             //Step P:e
-            start = System.currentTimeMillis();
             item it = new item(iid, "I_PRICE", "I_NAME");
             BigDecimal itemAmount = it.price().multiply(BigDecimal.valueOf(quantities.get(i)));
-            newOrderTimes[6] += System.currentTimeMillis() - start;
             
             //Step P:f
             totalAmount = totalAmount.add(itemAmount);
@@ -144,7 +121,7 @@ public class Transaction {
             // System.out.println("s_quantity : " + oldquantity);
 
             //Step P:g
-            ba.add(QueryBuilder.insertInto("order_line")
+            batchOL.add(QueryBuilder.insertInto("order_line")
                 .value("OL_O_ID", N)
                 .value("OL_D_ID", did)
                 .value("OL_W_ID", wid)
@@ -156,9 +133,8 @@ public class Transaction {
                 .value("OL_DIST_INFO","S_DIST_" + String.format("%02d", did))
             );
         }
-        start = System.currentTimeMillis();
-        Connector.s.execute(ba);
-        newOrderTimes[7] += System.currentTimeMillis() - start;
+        Connector.s.executeAsync(batchOL);
+        Connector.s.executeAsync(batchStock);
 
         //Step P:6
         totalAmount = totalAmount.multiply(BigDecimal.ONE.add(dtax).add(wtax)).multiply(BigDecimal.ONE.subtract(c.discount()));
@@ -340,7 +316,7 @@ public class Transaction {
         }
     }
     //Transaction 5
-    private static void stockLevel(int wid, int did, BigDecimal t, int l) {
+    private static void stockLevel(int wid, int did, long t, int l) {
         //Step 1
         int N = Wrapper.findDistrict(wid, did, "D_NEXT_O_ID").getInt(0);
 
@@ -353,15 +329,13 @@ public class Transaction {
                 .and(QueryBuilder.gt("OL_O_ID", N-l))
                 .and(QueryBuilder.lte("OL_O_ID", N))
             ).all().stream().mapToInt(r -> r.getInt(0)).boxed().collect(Collectors.toList());
-
         //Step 3
         System.out.println(Connector.s.execute(QueryBuilder
-            .select(QueryBuilder.count("S_I_ID"))
-            .from("stock_by_quantity")
+            .select("S_QUANTITY")
+            .from("stock_cnts")
             .where(QueryBuilder.eq("S_W_ID", wid))
             .and(QueryBuilder.in("S_I_ID", itemids))
-            .and(QueryBuilder.lt("S_QUANTITY", t))
-        ).one());
+        ).all().stream().mapToLong(r -> r.getLong(0)).map(q -> q <= t ? 1 : 0).count());
     }
 
     //Transaction 6
@@ -634,7 +608,7 @@ public class Transaction {
             try{input = bi.readLine().split(",");} catch(IOException ioe) {ioe.printStackTrace(); return;}
             int wid = Integer.parseInt(input[0]);
             int did = Integer.parseInt(input[1]);
-            BigDecimal T = new BigDecimal(input[2]);
+            long T = Long.parseLong(input[2]);
             int L = Integer.parseInt(input[3]);
             try{ stockLevel(wid, did, T, L); }
             catch(Exception e) { System.out.println("Unable to perform Stock-Level"); e.printStackTrace();}
