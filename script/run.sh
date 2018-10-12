@@ -21,14 +21,14 @@ for i in $(seq 1 $NC); do
 	ssh $CLUSTER_NAME@$MASTER "cat ~/$i.out | grep '#!#!STATS:''"
 done
 #4a
-cqlsh $MASTER --request-timeout=3600 -e "select sum(W_YTD) from warehouse.warehouse"
+cqlsh $MASTER --request-timeout=3600 -e "select sum(W_YTD) from warehouse.warehouse_cnts"
 #4b
-cqlsh $MASTER --request-timeout=3600 -e "select sum(D_YTD), sum(D_NEXT_O_ID) from warehouse.district"
+cqlsh $MASTER --request-timeout=3600 -e "select sum(D_YTD), sum(D_NEXT_O_ID) from warehouse.district_cnts"
 #4c
-cqlsh $MASTER --request-timeout=3600 -e "select sum(C_BALANCE), sum(C_YTD_PAYMENT), sum(C_PAYMENT_CNT), sum(C_DELIVERY_CNT) from warehouse.customer"
+cqlsh $MASTER --request-timeout=3600 -e "select sum(C_BALANCE), sum(C_YTD_PAYMENT), sum(C_PAYMENT_CNT), sum(C_DELIVERY_CNT) from warehouse.customer_cnts"
 #4d
 cqlsh $MASTER --request-timeout=3600 -e "select max(O_ID), sum(O_OL_CNT) from warehouse.orders"
 #4e
 cqlsh $MASTER --request-timeout=3600 -e "select sum(OL_AMOUNT), sum(OL_QUANTITY) from warehouse.order_line" 
 #4f
-cqlsh $MASTER --request-timeout=3600 -e "select sum(S_QUANTITY), sum(S_YTD), sum(S_ORDER_CNT) from warehouse.stock"
+cqlsh $MASTER --request-timeout=3600 -e "select sum(S_QUANTITY), sum(S_YTD), sum(S_ORDER_CNT) from warehouse.stock_cnts"

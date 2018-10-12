@@ -12,12 +12,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
+import com.datastax.driver.core.BatchStatement.Type;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 
 import app.wrapper.customer;
@@ -57,7 +57,7 @@ public class Transaction {
     }
 
     //Transaction 1
-    public static void newOrder(int wid, int did, int cid, List<Integer> ids, List<Integer> wids, List<Integer> quantities ) throws NoSuchElementException{
+    public static void newOrder(int wid, int did, int cid, List<Integer> ids, List<Integer> wids, List<Long> quantities ) throws NoSuchElementException{
         //Step O:1
         customer c = new customer(wid, did, cid, "C_W_ID" , "C_W_ID", "C_ID", "C_LAST", "C_CREDIT", "C_DISCOUNT");
         System.out.println(c);
@@ -100,17 +100,18 @@ public class Transaction {
         BigDecimal totalAmount = BigDecimal.ZERO;
         
         //Step P:5
-        BatchStatement batchOL = new BatchStatement();
-        BatchStatement batchStock = new BatchStatement();
+        BatchStatement batchOL = new BatchStatement(Type.UNLOGGED);
+        BatchStatement batchStock = new BatchStatement(Type.COUNTER);
         stock_cnts s = new stock_cnts();
         for(int i = 0; i < ids.size(); i++){
             int iid = ids.get(i);
             //step P:a
             s.find(wid, iid, "S_QUANTITY");
-            long restock = s.quantity() - quantities.get(i) < 10 ? 100 : 0;
+            long adjustedQuantity = quantities.get(0) - (s.quantity() - quantities.get(i) < 10 ? 100 : 0);
+            long remote = wid != wids.get(i) ? 1 : 0;
             batchStock.add(Connector.s.prepare(
-                    "update stock_cnts set S_QUANTITY = S_QUANTITY - :d, S_YTD = S_YTD + :d, S_ORDER_CNT = S_ORDER_CNT + 1, S_REMOTE_CNT = S_REMOTE_CNT + :d where S_W_ID = :d and S_I_ID = :d;"
-                ).bind((long)quantities.get(i) + restock, (long) quantities.get(i), (long) (wid != wids.get(i) ? 1 : 0), wid, iid)
+                    "update stock_cnts set S_QUANTITY = S_QUANTITY - ?, S_YTD = S_YTD + ?, S_ORDER_CNT = S_ORDER_CNT + 1, S_REMOTE_CNT = S_REMOTE_CNT + ? where S_W_ID = ? and S_I_ID = ?;"
+                ).bind(adjustedQuantity, quantities.get(i), remote, wid, iid)
             );
             
             //Step P:e
@@ -126,7 +127,7 @@ public class Transaction {
             System.out.println("supplier_warehouse : " + wids.get(i));
             System.out.println("quantity : " + quantities.get(i));
             System.out.println("ol_amount : " + itemAmount); 
-            System.out.println("s_quantity : " + (s.quantity() - quantities.get(i) + restock));
+            System.out.println("s_quantity : " + (s.quantity() - adjustedQuantity));
 
             //Step P:g
             batchOL.add(QueryBuilder.insertInto("order_line")
@@ -142,7 +143,8 @@ public class Transaction {
             );
         }
         Connector.s.executeAsync(batchOL);
-        Connector.s.executeAsync(batchStock);
+        System.out.println("EXECTUING BATCH WITH SIZE " + batchStock.size());
+        Connector.s.execute(batchStock);
 
         //Step P:6
         totalAmount = totalAmount.multiply(BigDecimal.ONE.add(dtax).add(wtax)).multiply(BigDecimal.ONE.subtract(c.discount()));

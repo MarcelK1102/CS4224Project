@@ -60,12 +60,12 @@ public class Client {
             int m = Integer.parseInt(input[3]);
             List<Integer> ids = new ArrayList<>(m);
             List<Integer> wids = new ArrayList<>(m);
-            List<Integer> quantities = new ArrayList<>(m);
+            List<Long> quantities = new ArrayList<>(m);
             for(int i = 0; i < m; i++){
                 try{input = bi.readLine().split(",");} catch(IOException ioe) {ioe.printStackTrace(); return;}
                 ids.add(i, Integer.parseInt(input[0]));
                 wids.add(i, Integer.parseInt(input[1]));
-                quantities.add(i, Integer.parseInt(input[2]));
+                quantities.add(i, Long.parseLong(input[2]));
             }
             try { Transaction.newOrder(wid, did, cid, ids, wids, quantities); }
             catch(Exception e){ System.out.println("Unable to perform newOrder transaction" ); e.printStackTrace();}
