@@ -7,7 +7,7 @@ XACT=4224-project-files/xact-files
 CONSISTENCY=$2
 NC=$1
 
-scp $JAR $CLUSTER_NAME@$MASTER:~/app.jar
+# scp $JAR $CLUSTER_NAME@$MASTER:~/app.jar
 
 IFS=', ' read -r -a array <<< $SEEDS
 for i in $(seq 1 $NC); do
@@ -21,14 +21,15 @@ for i in $(seq 1 $NC); do
 	ssh $CLUSTER_NAME@$MASTER "cat ~/$i.out | grep '#!#!STATS:''"
 done
 #4a
-cqlsh $MASTER --request-timeout=3600 -e "select sum(W_YTD) from warehouse.warehouse_cnts"
+cqlsh $MASTER --request-timeout=3600 -e "select sum(W_YTD) from warehouse.warehouse_cnts" >> database.out &
 #4b
-cqlsh $MASTER --request-timeout=3600 -e "select sum(D_YTD), sum(D_NEXT_O_ID) from warehouse.district_cnts"
+cqlsh $MASTER --request-timeout=3600 -e "select sum(D_YTD), sum(D_NEXT_O_ID) from warehouse.district_cnts" >> database.out &
 #4c
-cqlsh $MASTER --request-timeout=3600 -e "select sum(C_BALANCE), sum(C_YTD_PAYMENT), sum(C_PAYMENT_CNT), sum(C_DELIVERY_CNT) from warehouse.customer_cnts"
+cqlsh $MASTER --request-timeout=3600 -e "select sum(C_BALANCE), sum(C_YTD_PAYMENT), sum(C_PAYMENT_CNT), sum(C_DELIVERY_CNT) from warehouse.customer_cnts" >> database.out &
 #4d
-cqlsh $MASTER --request-timeout=3600 -e "select max(O_ID), sum(O_OL_CNT) from warehouse.orders"
+cqlsh $MASTER --request-timeout=3600 -e "select max(O_ID), sum(O_OL_CNT) from warehouse.orders" >> database.out &
 #4e
-cqlsh $MASTER --request-timeout=3600 -e "select sum(OL_AMOUNT), sum(OL_QUANTITY) from warehouse.order_line" 
+cqlsh $MASTER --request-timeout=3600 -e "select sum(OL_AMOUNT), sum(OL_QUANTITY) from warehouse.order_line" >> database.out &
 #4f
-cqlsh $MASTER --request-timeout=3600 -e "select sum(S_QUANTITY), sum(S_YTD), sum(S_ORDER_CNT) from warehouse.stock_cnts"
+cqlsh $MASTER --request-timeout=3600 -e "select sum(S_QUANTITY), sum(S_YTD), sum(S_ORDER_CNT) from warehouse.stock_cnts" >> database.out &
+#end

@@ -381,7 +381,6 @@ public class Transaction {
             }
 
             //"Select * from order_line_by_quantity where ..., QUANITYT >= MAX limit L" 
-
             ResultSet Items = Connector.s.execute(QueryBuilder
                     .select().all()
                     .from(Connector.keyspace, "order_line")

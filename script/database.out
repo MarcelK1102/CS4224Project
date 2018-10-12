@@ -1,0 +1,50 @@
+
+ system.sum(w_ytd)
+-------------------
+        1791912726
+
+(1 rows)
+
+Warnings :
+Aggregation query used without partition key
+
+
+ system.sum(d_ytd) | system.sum(d_next_o_id)
+-------------------+-------------------------
+        1789212826 |                 7966352
+
+(1 rows)
+
+Warnings :
+Aggregation query used without partition key
+
+
+ system.sum(c_balance) | system.sum(c_ytd_payment) | system.sum(c_payment_cnt) | system.sum(c_delivery_cnt)
+-----------------------+---------------------------+---------------------------+----------------------------
+            3005467989 |                1788912961 |                   1014979 |                    3156441
+
+(1 rows)
+
+Warnings :
+Aggregation query used without partition key
+
+
+ system.sum(s_quantity) | system.sum(s_ytd) | system.sum(s_order_cnt)
+------------------------+-------------------+-------------------------
+               49902214 |         215166171 |                94121374
+
+(1 rows)
+
+Warnings :
+Aggregation query used without partition key
+
+
+ system.max(o_id) | system.sum(o_ol_cnt)
+------------------+----------------------
+           276044 |             65209800
+
+(1 rows)
+
+Warnings :
+Aggregation query used without partition key
+
