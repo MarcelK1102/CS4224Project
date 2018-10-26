@@ -21,8 +21,9 @@ public class Connector {
     // private static Cluster cluster;
     public static void connect(){
        // Connector.mongoclient = MongoClients.create("mongodb://" + String.join(",",contactPoints));
-       Connector.mongoclient = MongoClients.create("mongodb://" + contactPoints[0]);
-
+       //ClusterSettings clusterSettings = ClusterSettings.builder().hosts(asList(new ServerAddress("localhost"))).build();
+        //MongoClientSettings settings = MongoClientSettings.builder().clusterSettings(clusterSettings).build();
+        MongoClient mongoClient = MongoClients.create("mongodb://192.168.48.249:27017");
     }
 
     public static void close() {
