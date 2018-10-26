@@ -7,13 +7,17 @@ public class App {
         //     Connector.connect(ConsistencyLevel.QUORUM);
         // else
         //     Connector.connect(ConsistencyLevel.ONE);
-        try{
+        /*try{   
             Client.handleInput(args.length > 1 ? Integer.parseInt(args[1]) : -1);
         } finally {
             Connector.close();
             Client.printStats();
         }
-        return;
+        return;*/
+
+        Connector.connect();
+        Transaction.stockLevel(5, 5, 1, 1);
+        Connector.close();
     }
 
 }
