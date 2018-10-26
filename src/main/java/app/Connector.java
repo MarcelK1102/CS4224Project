@@ -20,7 +20,9 @@ public class Connector {
     // public static Session s;
     // private static Cluster cluster;
     public static void connect(){
-        Connector.mongoclient = MongoClients.create("mongodb://" + String.join(",",contactPoints));
+       // Connector.mongoclient = MongoClients.create("mongodb://" + String.join(",",contactPoints));
+       Connector.mongoclient = MongoClients.create("mongodb://" + contactPoints[0]);
+
     }
 
     public static void close() {
