@@ -1,5 +1,8 @@
 package app;
 
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
+
 public class Connector {
     private static int port = 9042;
     public static String keyspace = "warehouse";
@@ -11,20 +14,13 @@ public class Connector {
         "192.168.48.252",
         "192.168.48.253"
     };
+
+    static MongoClient mongoclient;
     
     // public static Session s;
     // private static Cluster cluster;
     public static void connect(){
-        // cluster = Cluster.builder()
-        //     .withClusterName(clusterName)
-        //     .addContactPoints(contactPoints)
-        //     .withPort(port)
-        //     .withSocketOptions(new SocketOptions().setReadTimeoutMillis(600000))
-        //     .withQueryOptions(new QueryOptions().setConsistencyLevel(qo))
-        //     .build();;
-        // s = cluster.connect();
-        // s.execute("use " + keyspace + ";");
-        // return s;
+        Connector.mongoclient = MongoClients.create("mongodb://" + String.join(",",contactPoints));
     }
 
     public static void close() {
@@ -33,6 +29,7 @@ public class Connector {
         //     s = null;
         // }
         // cluster.close();
+        mongoclient.close();
     }
 
 }

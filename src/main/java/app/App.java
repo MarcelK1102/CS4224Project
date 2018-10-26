@@ -17,3 +17,6 @@ public class App {
     }
 
 }
+
+//todo
+//set up a mongodb shared cluster: https://docs.mongodb.com/manual/tutorial/deploy-shard-cluster/
