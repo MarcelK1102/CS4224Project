@@ -9,11 +9,13 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+
+import java.util.Iterator;
 import org.bson.Document;
 
 public class Transaction {
 
-    static MongoDatabase db =Connector.mongoclient.getDatabase("warehouse");
+    static MongoDatabase db = Connector.mongoclient.getDatabase("warehouse");
 
     // private static void checkTopCustomer(customer_cnts cc){
         // List<Row> customers = Connector.s.execute(QueryBuilder.select().all().from("customer_top_ten"))
@@ -82,14 +84,20 @@ public class Transaction {
         //     .and(QueryBuilder.in("S_I_ID", itemids))
         // ).all().stream().mapToLong(r -> r.getLong(0)).map(q -> q <= t ? 1 : 0).count());
 
+        System.out.println("1");
         MongoCollection<Document> districts = db.getCollection("district");
-        BasicDBObject query = new BasicDBObject();
+        System.out.println("2");
+        Document district = districts.find().first();
+        System.out.println("3");
+        System.out.println(district.toJson());
+        System.out.println("4");
+        /*BasicDBObject query = new BasicDBObject();
         query.put("W_ID", wid);
         query.put("D_ID", did);
-        FindIterable<Document> it = districts.find(query);
-        Document district = it.first();
-        long N = district.getLong("D NEXT O ID");
-        System.out.println("N: " + N);
+        FindIterable<Document> district = districts.findOne();
+        
+        System.out.println("stock level5");*/
+        
     }
 
     //Transaction 6

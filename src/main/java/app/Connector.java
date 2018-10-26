@@ -23,7 +23,7 @@ public class Connector {
        // Connector.mongoclient = MongoClients.create("mongodb://" + String.join(",",contactPoints));
        //ClusterSettings clusterSettings = ClusterSettings.builder().hosts(asList(new ServerAddress("localhost"))).build();
         //MongoClientSettings settings = MongoClientSettings.builder().clusterSettings(clusterSettings).build();
-        MongoClient mongoClient = MongoClients.create("mongodb://192.168.48.249:27017");
+        Connector.mongoclient = MongoClients.create("mongodb://192.168.48.249:27017");
     }
 
     public static void close() {
