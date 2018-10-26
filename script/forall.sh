@@ -6,9 +6,9 @@ CLUSTER_NAME=cs4224g
 PROJECT_PATH=..
 
 #Add ssh key for shared drive as to avoid giving password in the future
-ssh-keygen -t rsa
-ssh ${CLUSTER_NAME}@${MASTER} mkdir -p .ssh #DO THIS IF NOT DONE
-cat ~/.ssh/id_rsa.pub | ssh ${CLUSTER_NAME}@${MASTER} 'cat >> ~/.ssh/authorized_keys'
+# ssh-keygen -t rsa
+# ssh ${CLUSTER_NAME}@${MASTER} mkdir -p .ssh #DO THIS IF NOT DONE
+# cat ~/.ssh/id_rsa.pub | ssh ${CLUSTER_NAME}@${MASTER} 'cat >> ~/.ssh/authorized_keys'
 
 #Execute install script
 for i in $(echo $SEEDS | sed "s/,/ /g")
@@ -19,6 +19,6 @@ done
 wait
 echo "DONE INSTALLING"
 
-scp $PROJECT_PATH/db/*.cql ${CLUSTER_NAME}@${MASTER}:~/
-ssh $CLUSTER_NAME@$MASTER "bash -s" < ./initdb.sh $VERSION $MASTER
-echo "DONE DATABASE SETUP"
+# scp $PROJECT_PATH/db/*.cql ${CLUSTER_NAME}@${MASTER}:~/
+# ssh $CLUSTER_NAME@$MASTER "bash -s" < ./initdb.sh $VERSION $MASTER
+# echo "DONE DATABASE SETUP"
