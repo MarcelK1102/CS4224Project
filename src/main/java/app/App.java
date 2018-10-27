@@ -17,7 +17,7 @@ public class App {
 
         Connector.connect();
         System.out.println("connected");
-        Transaction.stockLevel(5, 5, 1, 1);
+        Transaction.stockLevel(1, 5, 1, 1);
         Connector.close();
     }
 

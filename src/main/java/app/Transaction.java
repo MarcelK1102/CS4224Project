@@ -84,19 +84,18 @@ public class Transaction {
         //     .and(QueryBuilder.in("S_I_ID", itemids))
         // ).all().stream().mapToLong(r -> r.getLong(0)).map(q -> q <= t ? 1 : 0).count());
 
-        System.out.println("1");
         MongoCollection<Document> districts = db.getCollection("district");
-        System.out.println("2");
-        Document district = districts.find().first();
-        System.out.println("3");
-        System.out.println(district.toJson());
-        System.out.println("4");
-        /*BasicDBObject query = new BasicDBObject();
-        query.put("W_ID", wid);
-        query.put("D_ID", did);
-        FindIterable<Document> district = districts.findOne();
+        BasicDBObject query = new BasicDBObject();
+        query.put("D_W_ID", wid);
+        query.put("D_ID", did);     
+        FindIterable<Document> d =  districts.find(query);
+        Iterator<Document> it = d.iterator();
+        Document district = it.next();        
         
-        System.out.println("stock level5");*/
+        long N = district.getLong("D NEXT O ID");        
+        System.out.println("N: " + N);
+
+
         
     }
 
