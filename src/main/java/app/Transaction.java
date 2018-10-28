@@ -88,114 +88,110 @@ public class Transaction {
 
      }
 
-//Transaction 3
-public static void processDelivery(int wid, int carrierid) {
+    //Transaction 3
+    public static void processDelivery(int wid, int carrierid) {
 
-    MongoCollection<Document> orders = db.getCollection("order");
-    MongoCollection<Document> orderlines = db.getCollection("order_lines");
-    MongoCollection<Document> customers = db.getCollection("customer");
-    for (int did = 1; did <= 1; did++){
-        Document order = orders.find(new BasicDBObject()
-        .append("O_W_ID", wid)
-        .append("O_D_ID", did)
-        .append("O_CARRIER_ID", "null"))
-        .sort(new BasicDBObject("O_ID", 1))
+        MongoCollection<Document> orders = db.getCollection("order");
+        MongoCollection<Document> orderlines = db.getCollection("order_line");
+        MongoCollection<Document> customers = db.getCollection("customer");
+
+        for (int did = 1; did <= 10; did++){
+
+            FindIterable<Document> orders_curr = orders.find(new BasicDBObject()
+            .append("O_W_ID", wid)
+            .append("O_D_ID", did));
+
+            Document order = orders_curr.filter(new BasicDBObject("O_CARRIER_ID", "null"))
+            .sort(new BasicDBObject("O_ID", 1))
+            .limit(1)
+            .first();
+
+            if (order == null){
+                continue;
+            }
+            int N = order.getInteger("O_ID");
+            int cid = order.getInteger("O_C_ID");
+
+            //b
+            orders.updateOne(orders_curr.filter(new BasicDBObject().append("O_ID", N)).first(), 
+            new Document("$set", new Document().append("O_CARRIER_ID", carrierid)));
+
+            //c
+            String date = Date.from(Instant.now()).toString();//date not string
+            FindIterable<Document> orderlines_curr = orderlines.find(new BasicDBObject()
+            .append("OL_W_ID", wid)
+            .append("OL_D_ID", did)
+            .append("OL_O_ID", N));
+
+            orderlines.updateMany(
+            orderlines_curr,
+            new Document("$set", new Document("OL_DELIVERY_D", date))); 
+
+            //d
+            Iterator<Document> toAdd = orderlines_curr.iterator();
+
+            double B = 0;
+            while(toAdd.hasNext()){
+                B += toAdd.next().getDouble("OL_AMOUNT");
+            }
+
+            customers.updateOne(new BasicDBObject()
+            .append("C_W_ID", wid)
+            .append("C_D_ID", did)
+            .append("C_ID", cid),
+            new Document("$inc", new Document()
+            .append("C BALANCE", B)
+            .append("C_DELIVERY_CNT", 1)));
+        }
+
+    }
+    //Transaction 4
+    public static void getOrderStatus(int c_wid, int c_did, int cid) throws InvalidKeyException{
+
+        //Step 1
+        MongoCollection<Document> customers = db.getCollection("customer");
+        Document customer =  customers.find(new BasicDBObject()
+        .append("C_W_ID", c_wid)
+        .append("C_D_ID", c_did)
+        .append("C_ID", cid)).first();
+        System.out.println("Name: " + customer.getString("C_FIRST") + " " + customer.getString("C_MIDDLE") + " " + customer.getString("C_LAST"));
+        System.out.println("Balance: " + customer.getDouble("C_BALANCE"));
+
+        //Step 2
+        MongoCollection<Document> orders = db.getCollection("order");
+        Document lastOrder = orders.find(new BasicDBObject()
+        .append("O_W_ID", c_wid)
+        .append("O_D_ID", c_did)
+        .append("O_C_ID", cid))
+        .sort(new BasicDBObject("O_ENTRY_D", -1))
         .limit(1)
         .first();
-
-        if (order == null){
-            continue;
+        if (lastOrder == null){
+            throw new InvalidKeyException("No Order with valid timestamp found");
         }
-        System.out.println(order);
-        int N = order.getInteger("O_ID");
-        int cid = order.getInteger("O_C_ID");
+        int oid =  lastOrder.getInteger("O_ID");
+        System.out.println("O_ID: " +oid);
+        System.out.println("O_ENTRY_D: " + lastOrder.getString("O_ENTRY_D")); //TODO: Type Date
+        System.out.println("O_CARRIER_ID: " + lastOrder.getInteger("O_CARRIER_ID"));
 
-        //b
-        orders.updateOne(new BasicDBObject()
-        .append("O_W_ID", wid)
-        .append("O_D_ID",  did)
-        .append("O_ID", N), 
-        new Document("$set", new Document().append("O_CARRIER_ID", carrierid)));
+        //Step 3
+        MongoCollection<Document> orderlines = db.getCollection("order_line");
+        Iterator<Document> ol_it = orderlines.find(new BasicDBObject()
+        .append("OL_W_ID", c_wid)
+        .append("OL_D_ID", c_did)
+        .append("OL_O_ID", oid))
+        .iterator();
 
-        //c
-        Date date = Date.from(Instant.now());
-        System.out.println(date);
-        orderlines.updateMany(
-        new BasicDBObject()
-        .append("OL_W_ID", wid)
-        .append("OL_D_ID", did)
-        .append("OL_O_ID", N),
-        new Document("$set", new Document("OL_DELIVERY_D", date.toString()))); //date not string
-
-        //d
-        Iterator<Document> toAdd = orderlines.find(new BasicDBObject()
-        .append("OL_W_ID",wid)
-        .append("OL_O_ID", N)
-        .append("OL_D_ID", did)).iterator();
-
-        int B = 0;
-        while(toAdd.hasNext()){
-            B += toAdd.next().getInteger("OL_AMOUNT");
+        while(ol_it.hasNext()){
+            Document curr = ol_it.next();
+            System.out.println("OL_I_ID: " + curr.getInteger("OL_I_ID"));
+            System.out.println("OL_SUPPLY_W_ID: " + curr.getInteger("OL_SUPPLY_W_ID"));
+            System.out.println("OL_QUANTITY:"  + curr.getInteger("OL_QUANTITY"));
+            System.out.println("OL_AMOUNT:"  + curr.getDouble("OL_AMOUNT"));
+            System.out.println("OL_DELIVERY_D:"  + curr.getString("OL_DELIVERY_D")); //TODO date
         }
-
-        customers.updateOne(new BasicDBObject()
-        .append("C_W_ID", wid)
-        .append("C_D_ID", did)
-        .append("C_ID", cid),
-        new BasicDBObject("$inc", new BasicDBObject()
-        .append("C BALANCE", B)
-        .append("C_DELIVERY_CNT", 1)));
+        
     }
-
-
-}
-//Transaction 4
-public static void getOrderStatus(int c_wid, int c_did, int cid) throws InvalidKeyException{
-
-    //Step 1
-    MongoCollection<Document> customers = db.getCollection("customer");
-    Document customer =  customers.find(new BasicDBObject()
-    .append("C_W_ID", c_wid)
-    .append("C_D_ID", c_did)
-    .append("C_ID", cid)).first();
-    System.out.println("Name: " + customer.getString("C_FIRST") + " " + customer.getString("C_MIDDLE") + " " + customer.getString("C_LAST"));
-    System.out.println("Balance: " + customer.getDouble("C_BALANCE"));
-
-    //Step 2
-    MongoCollection<Document> orders = db.getCollection("order");
-    Document lastOrder = orders.find(new BasicDBObject()
-    .append("O_W_ID", c_wid)
-    .append("O_D_ID", c_did)
-    .append("O_C_ID", cid))
-    .sort(new BasicDBObject("O_ENTRY_D", -1))
-    .limit(1)
-    .first();
-    if (lastOrder == null){
-        throw new InvalidKeyException("No Order with valid timestamp found");
-    }
-    int oid =  lastOrder.getInteger("O_ID");
-    System.out.println("O_ID: " +oid);
-    System.out.println("O_ENTRY_D: " + lastOrder.getString("O_ENTRY_D")); //TODO: Type Date
-    System.out.println("O_CARRIER_ID: " + lastOrder.getInteger("O_CARRIER_ID"));
-
-    //Step 3
-    MongoCollection<Document> orderlines = db.getCollection("order_line");
-    Iterator<Document> ol_it = orderlines.find(new BasicDBObject()
-    .append("OL_W_ID", c_wid)
-    .append("OL_D_ID", c_did)
-    .append("OL_O_ID", oid))
-    .iterator();
-
-    while(ol_it.hasNext()){
-        Document curr = ol_it.next();
-        System.out.println("OL_I_ID: " + curr.getInteger("OL_I_ID"));
-        System.out.println("OL_SUPPLY_W_ID: " + curr.getInteger("OL_SUPPLY_W_ID"));
-        System.out.println("OL_QUANTITY:"  + curr.getInteger("OL_QUANTITY"));
-        System.out.println("OL_AMOUNT:"  + curr.getDouble("OL_AMOUNT"));
-        System.out.println("OL_DELIVERY_D:"  + curr.getString("OL_DELIVERY_D")); //TODO date
-    }
-    
-}
 
     //Transaction 5
     public static void stockLevel(int wid, int did, long t, int l) {
