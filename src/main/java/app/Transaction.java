@@ -10,8 +10,12 @@ import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import org.bson.Document;
+import org.bson.types.MaxKey;
 
 public class Transaction {
 
@@ -98,10 +102,107 @@ public class Transaction {
 
         
     }
-
+    public static int max(FindIterable<Document> set, String object){
+        int maximum = 0;
+        Iterator<Document> it = set.iterator();
+        while(it.hasNext()){
+            Document tmp = it.next();
+            
+            if(maximum<tmp.getInteger(object))
+                maximum = tmp.getInteger(object);
+        }
+        return maximum;
+    }
     //Transaction 6
     public static void popularItem(int wid, int did, int L) {
-        
+        //P Step 1
+        MongoCollection<Document> districts = db.getCollection("district");
+        Document district = districts.find(
+            new BasicDBObject()
+            .append("D_W_ID",wid)
+            .append("D_ID", did)
+        ).first();        
+        //falscher datentyp
+        Integer N = (int) (0 + district.getDouble("D_NEXT_O_ID"));
+        //P Step 2
+        //MongoCollection<Document> S = db.getCollection("order");
+        FindIterable<Document> S =  db.getCollection("order").find(
+            new BasicDBObject()
+            .append("O_W_ID", wid)
+            .append("O_D_ID", did)
+            .append("O_ID", new BasicDBObject("$gte",N-L).append("$lt",N))
+        );
+        //First Print
+        Iterator<Document> it = S.iterator();
+        ArrayList<Integer> orders = new ArrayList<Integer>();
+        //orderNumber -> allItems
+        HashMap<Integer, HashSet<Integer>> allItems = new HashMap<>();
+        //orderNumber -> popularItems
+        HashMap<Integer, HashSet<Integer>> popularItems = new HashMap<>();
+        //itemID -> Quantity
+        HashMap<Pair,Integer> popItemQuantity = new HashMap<>();
+        MongoCollection<Document> order_line = db.getCollection("order_line");
+        BasicDBObject query = new BasicDBObject().append("OL_D_ID",did).append("OL_W_ID",wid);
+        FindIterable<Document> tmp = order_line.find(query);
+        while(it.hasNext()){
+            Document currentOrder = it.next();
+            int O_ID = currentOrder.getInteger("O_ID");
+            FindIterable<Document> tmp2 = tmp.filter(query.append("OL_O_ID", O_ID));
+            Integer max = tmp2.sort(new BasicDBObject("OL_QUANTITY",-1)).first().getInteger("OL_QUANTITY");            
+            FindIterable<Document> Items =  tmp2.filter(query.append("OL_QUANTITY", max).append("OL_O_ID",O_ID));
+            Iterator<Document> it2 = Items.iterator();
+            HashSet<Integer> items = new HashSet<>();
+            HashSet<Integer> popItems = new HashSet<>();
+            while(it2.hasNext()){
+                Document Item = it2.next();
+                items.add(Item.getInteger("OL_I_ID"));
+                popItemQuantity.put(new Pair(O_ID,Item.getInteger("OL_I_ID")),Item.getInteger("OL_QUANTITY"));
+                popItems.add(Item.getInteger("OL_I_ID"));
+            }
+            allItems.put(O_ID,items);
+            popularItems.put(O_ID,popItems);
+            orders.add(O_ID);
+            System.out.println("HIER");
+        }
+        for(Integer o : orders ){
+            //3.a
+            
+            Document Order = db.getCollection("order").find(
+                new BasicDBObject()
+                .append("O_W_ID", wid)
+                .append("O_D_ID", did)
+                .append("O_ID",o)
+            ).first();
+            
+            System.out.println("Order ID: " + o + " Date " + Order.getString("O_ENTRY_D"));
+            //3.b
+            Document Customer = db.getCollection("customer").find(
+                new BasicDBObject()
+                .append("C_W_ID", wid)
+                .append("C_D_ID", did)
+                .append("C_ID",Order.getInteger("O_C_ID"))
+            ).first();
+            //Wrapper.findCustomer(wid,did,Order.getInt("O_C_ID"));
+            System.out.println("CName: " + Customer.getString("C_FIRST") + " " + Customer.getString("C_MIDDLE") + " " +Customer.getString("C_LAST"));
+            for(Integer i : popularItems.get(o)){
+                //4.a
+                Document I = db.getCollection("item").find(
+                    new BasicDBObject()
+                    .append("I_ID", i)
+                ).first();
+                System.out.println("Popular Item: " + I.getString("I_NAME") + " Quantity: " + popItemQuantity.get(new Pair(o,i)));
+                int counter = 0;
+                for(Integer t : orders){
+                    if(allItems.get(t)==null)
+                    continue;
+                    if(allItems.get(t).contains(i))
+                    counter++;
+                }
+                System.out.println(100*(float)counter / (float)orders.size());
+
+            }
+
+        }
     }
     
     //Transaction 7
