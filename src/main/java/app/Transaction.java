@@ -162,7 +162,6 @@ public class Transaction {
             allItems.put(O_ID,items);
             popularItems.put(O_ID,popItems);
             orders.add(O_ID);
-            System.out.println("HIER");
         }
         for(Integer o : orders ){
             //3.a
