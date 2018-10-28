@@ -23,31 +23,7 @@ public class Transaction {
 
     static MongoDatabase db = Connector.mongoclient.getDatabase("warehouse");
 
-    // private static void checkTopCustomer(customer_cnts cc){
-        // List<Row> customers = Connector.s.execute(QueryBuilder.select().all().from("customer_top_ten"))
-        //     .all().stream()
-        //     .sorted( (r1, r2) -> Long.compare(r1.getLong("C_BALANCE"), r2.getLong("C_BALANCE")))
-        //     .collect(Collectors.toList());
-        // if(customers.isEmpty() || cc.balance() > customers.get(0).getLong("C_BALANCE")){
-        //     Connector.s.execute(QueryBuilder.insertInto("customer_top_ten")
-        //         .value("C_W_ID", cc.wid())
-        //         .value("C_D_ID", cc.did())
-        //         .value("C_ID", cc.id())
-        //         .value("C_BALANCE", cc.balance()));
-        //     if(customers.size() >= 10) {
-        //         for(int i = 0; i < customers.size() - 9; i++) {
-        //             Connector.s.execute(QueryBuilder
-        //                 .delete()
-        //                 .from("customer_top_ten")
-        //                 .where()
-        //                 .and(QueryBuilder.eq("C_W_ID", customers.get(i).getInt("C_W_ID")))
-        //                 .and(QueryBuilder.eq("C_D_ID", customers.get(i).getInt("C_D_ID")))
-        //                 .and(QueryBuilder.eq("C_ID", customers.get(i).getInt("C_ID"))));
-        //         }
-        //     }
-        // }
-    // }
-
+    
     //Transaction 1
     public static void newOrder(int wid, int did, int cid, List<Integer> ids, List<Integer> wids, List<Long> quantities ) throws NoSuchElementException{
         
@@ -126,7 +102,6 @@ public class Transaction {
             orderlines.updateMany(
             orderlines_curr,
             new Document("$set", new Document("OL_DELIVERY_D", date))); 
-
             //d
             Iterator<Document> toAdd = orderlines_curr.iterator();
 
