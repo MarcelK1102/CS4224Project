@@ -2,6 +2,7 @@ package app;
 
 import java.math.BigDecimal;
 import java.security.InvalidKeyException;
+import java.time.Instant;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Date;
@@ -53,22 +54,45 @@ public class Transaction {
     }
 
     //Transaction 2
-    public static void paymentTransaction(int cwid, int cdid, int cid, BigDecimal payment) {
-        onnector.s.execute(Connector.s.prepare(
-                "update warehouse_cnts set W_YTD = W_YTD + :d where W_ID = :d;"
-            ).bind(payment.longValue(), cwid));
-
+    public static void paymentTransaction(int cwid, int cdid, int cid, BigDecimal payment2) {
+        Integer payment = payment2.intValue();
+        MongoCollection<Document> warehouse = db.getCollection("warehouse");
+        MongoCollection<Document> district = db.getCollection("district");
+        MongoCollection<Document> customer = db.getCollection("customer");
+        Document C = customer.find(new BasicDBObject()
+        .append("C_ID", cid)
+        .append("C_D_ID", cdid)
+        .append("C_W_ID", cwid)
+        ).first();
+        Document D = district.find(new BasicDBObject()
+            .append("D_ID", cdid)
+            .append("D_W_ID", cwid)
+        ).first();
+        Document W = warehouse.find(new BasicDBObject()
+            .append("W_ID", cwid)
+        ).first();
+        warehouse.updateOne(
+            new BasicDBObject()
+            .append("W_ID", cwid),
+            new Document("$inc", new Document("W_YTD", payment)));
         //Step 2
-        Connector.s.execute(Connector.s.prepare(
-                "update district_cnts set D_YTD = D_YTD + :d where D_W_ID = :d and D_ID = :d;"
-            ).bind(payment.longValue(), cwid, cdid));
+        district.updateOne(D,new Document("$inc", new Document("D_YTD", payment)));
 
         //Step 3
+        customer.updateOne(C, new Document("$inc", new Document("C_YTD_PAYMENT", payment).append("C_BALANCE", -payment).append("C_PAYMENT_CNT",1)));   
+        System.out.println("C_W_ID: " + cwid + " C_D_ID: " + cdid + " C_ID: " + cid );
+        System.out.println("Name: " + C.getString("C_FIRST") +" " + C.getString("C_MIDDLE") + " "+ C.getString("C_LAST"));
+        System.out.println("Adress: " + C.getString("C_STREET_1") +" "+ C.getString("C_STREET_2") + " "+ C.getString("C_CITY") + " " +
+                                        C.getString("C_STATE") +" " + C.getString("C_ZIP") );
+        System.out.println("Phone: " + C.getString("C_PHONE"));
+        System.out.println("Since: " + C.getString("C_SINCE"));
+        System.out.println("Credit Information: "+ C.getString("C_CREDIT") + " Limit: " + C.getInteger("C_CREDIT_LIM") + " Discount: " + C.getInteger("C_DISCOUNT") + " Balance: " + C.getInteger("C_BALANCE") );
         
-        Connector.s.execute(Connector.s.prepare(
-                "update customer_cnts set C_BALANCE = C_BALANCE - :d, C_YTD_PAYMENT = C_YTD_PAYMENT + :d, C_PAYMENT_CNT = C_PAYMENT_CNT + 1 where C_W_ID = :d and C_D_ID = :d and C_ID = :d;"
-            ).bind(payment.longValue(), payment.longValue(), cwid, cdid, cid));
-    }
+        System.out.println("Warehouse: " + W.getString("W_STREET_1") + " " + W.getString("W_STREET_2") +" " + W.getString("W_CITY") +" "+ W.getString("W_STATE") +" "+ W.getString("W_ZIP"));
+        System.out.println("District: " + D.getString("D_STREET_1") + " "+ D.getString("D_STREET_2") +" "+ D.getString("D_CITY") +" "+ D.getString("D_STATE") +" "+ D.getString("D_ZIP"));
+        System.out.println("Payment: " + payment);
+
+     }
 
     //Transaction 3
     public static void processDelivery(int wid, int carrierid) {
@@ -105,6 +129,7 @@ public class Transaction {
             .append("OL_D_ID", did)
             .append("OL_O_ID", N),
             new Document("$set", new Document("OL_DELIVERY_D", date)));
+            
 
             //d
             //Double B = orderlines

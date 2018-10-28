@@ -1,6 +1,8 @@
 package app;
 
-public class App {   
+import java.math.BigDecimal;
+
+public class App {
 
     public static void main(String args[]){
         // if(args.length > 0 && "quorum".equals(args[0].toLowerCase()))
@@ -18,7 +20,7 @@ public class App {
         Connector.connect();
         System.out.println("connected");
         //Transaction.stockLevel(1, 5, 1, 1);
-        Transaction.popularItem(1, 1, 6);
+        Transaction.popularItem(1, 1, 800);
         Connector.close();
     }
 
