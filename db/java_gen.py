@@ -58,6 +58,38 @@ fs = {
 
 buf = open("createDB.cql", "r").read()
 alpha = re.compile(r'[\W]+')
+tables = {}
+f = open("../src/main/java/app/Table.java", "w")
+f.write("""package app;
+
+import org.bson.Document;
+import org.bson.conversions.Bson;
+
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Updates;
+
+public class Table{
+	public static class Entry<T> {
+		public String s;
+		public Class<T> t;
+		public Entry(String s, Class<T> t){
+			this.s = s;
+			this.t = t;
+		}
+
+		public T from(Document d){
+			return d.get(s, t);
+		}
+
+		public Bson eq(T value){
+			return Filters.eq(s, value);
+		}
+
+		public Bson inc(Number n){
+			return Updates.inc(s, n);
+		}
+	}
+""")
 for statement in buf.split(");"):
 	tablename = ""
 	columns = {}
@@ -67,46 +99,24 @@ for statement in buf.split(");"):
 		line = line.upper()
 		if not found and "CREATE TABLE" not in line : continue
 		if "PRIMARY KEY" in line:
-			primarykeys = [alpha.sub('',w).lower() for w in line[line.find('('):].split(',')]
+			primarykeys = [alpha.sub('',w) for w in line[line.find('('):].split(',')]
 			continue
 		if "WITH" in line:
 			continue
 		words = line.split()
 		if len(words) < 2: continue
 		if not found:
-			tablename = alpha.sub('',words[2]).lower()
+			tablename = "".join([c.upper() if not i else c.lower() for i, c in enumerate(words[2]) if not alpha.match(c)])
 			if len(tablename) <= 0:
 				continue
 			found = True
 			continue
-		columns[alpha.sub('',words[0]).lower()] = conv[alpha.sub('', words[1])]
+		columns[words[0]] = conv[alpha.sub('', words[1])]
 	if len(columns) <= 0:continue
 	nkeys = len(primarykeys)
-	primarykeys = []
-	for i, k in enumerate(columns.keys()):
-		if i >= nkeys: break
-		primarykeys.append(k)
-	f = open("../src/main/java/app/wrapper/{}.java".format(tablename), "w", newline = '\n')
-	f.write("package app.wrapper;\n")
-	f.write("import com.datastax.driver.core.Row;\n")
-	f.write("import java.util.Arrays;\n")
-	f.write("import java.util.List;\n")
-	f.write("import com.datastax.driver.core.querybuilder.QueryBuilder;\n")
-	f.write("public class {} extends tablebase{{\n".format(tablename))
-	f.write('\tprivate static final List<String> primarykeys = Arrays.asList({});\n'.format(",".join('"{}"'.format(k) for k in primarykeys)))
-	for i, k in enumerate(primarykeys):
-		f.write("\tpublic int {}(){{return keysvalue.get({});}}\n".format("".join(k.split('_')[1:]),i))
-	for i, (k,v) in enumerate(columns.items()):
-		if i < len(primarykeys):continue
-		f.write('\tpublic {} {}(){{return r.{}("{}");}};\n'.format(v, "".join(k.split('_')[1:]), fs[v], k))
-	for i, (k,v) in enumerate(columns.items()):
-		f.write('\tpublic void set_{}({} value){{assigns.and(QueryBuilder.set("{}",value));}};\n'.format("".join(k.split('_')[1:]), v, k))
-	f.write('\tpublic {0}(){{super("{0}", primarykeys);}}\n'.format(tablename))
-	f.write('\tpublic {0} ({1}, String ... attr) {{this(); find({2}, attr);}}\n'.format(
-		tablename, 
-		",".join(["{} {}".format(columns[k],"".join(k.split('_')[1:])) for k in primarykeys]), 
-		",".join("".join(k.split('_')[1:]) for k in primarykeys)))
-	f.write("\tpublic Row find(%s, String ... attr){return super.find(Arrays.asList(%s), attr); }" %
-	 	(",".join(["{} {}".format(columns[k],"".join(k.split('_')[1:])) for k in primarykeys]),
-		 ",".join("".join(k.split('_')[1:]) for k in primarykeys)))
-	f.write("}\n\n")
+	ss = []
+	ts = []
+	for k, t in columns.items():
+		f.write('\tpublic static final Entry<{}> {} = new Entry<>("{}",{});\n'.format(t, k.lower(), k, t + ".class"))
+f.write("}\n")
+f.close()

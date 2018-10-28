@@ -1,23 +1,21 @@
 package app;
 
+import java.util.Arrays;
+
+import org.slf4j.LoggerFactory;
+
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.LoggerContext;
+
 public class App {   
 
-    public static void main(String args[]){
-        // if(args.length > 0 && "quorum".equals(args[0].toLowerCase()))
-        //     Connector.connect(ConsistencyLevel.QUORUM);
-        // else
-        //     Connector.connect(ConsistencyLevel.ONE);
-        /*try{   
-            Client.handleInput(args.length > 1 ? Integer.parseInt(args[1]) : -1);
-        } finally {
-            Connector.close();
-            Client.printStats();
-        }
-        return;*/
+    public static void main(String args[]) {
+        //Disable logging:
+        ((LoggerContext) LoggerFactory.getILoggerFactory()).getLogger("org.mongodb.driver").setLevel(Level.ERROR);
 
         Connector.connect();
         System.out.println("connected");
-        Transaction.stockLevel(5, 5, 1, 1);
+        Transaction.newOrder(1, 1, 1, Arrays.asList(1,2,3), Arrays.asList(1,1,1), Arrays.asList(123L,321L,312L)); 
         Connector.close();
     }
 
