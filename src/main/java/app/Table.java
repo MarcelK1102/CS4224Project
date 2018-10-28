@@ -23,6 +23,14 @@ public class Table{
 			return Filters.eq(s, value);
 		}
 
+		public Bson gt(T value){
+			return Filters.gt(s, value);
+		}
+
+		public Bson lt(T value){
+			return Filters.lt(s, value);
+		}
+
 		public Bson inc(Number n){
 			return Updates.inc(s, n);
 		}

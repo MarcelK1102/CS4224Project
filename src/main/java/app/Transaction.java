@@ -15,12 +15,20 @@ import java.util.Iterator;
 import java.util.List;
 
 import com.mongodb.BasicDBObject;
+import com.mongodb.Block;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 
 import org.bson.Document;
 
 public class Transaction {
+    static Block<Document> printBlock = new Block<Document>() {
+        @Override
+        public void apply(final Document document) {
+            System.out.println(document.toJson());
+        }
+    };
+
     //Transaction 1
     public static void newOrder(int wid, int did, int cid, List<Integer> ids, List<Integer> wids, List<Long> quantities ) {
         Document output = new Document();
@@ -241,40 +249,19 @@ public class Transaction {
     }
 
     //Transaction 5
-    public static void stockLevel(int wid, int did, long t, int l) {
-        // //Step 1
-        // long N = new district_cnts(wid, did, "D_NEXT_O_ID").nextoid();
-
-        // //Step 2
-        // List<Integer> itemids = Connector.s.execute(QueryBuilder
-        //         .select("OL_I_ID")
-        //         .from("order_line")
-        //         .where(QueryBuilder.eq("OL_W_ID", wid))
-        //         .and(QueryBuilder.eq("OL_D_ID", did))
-        //         .and(QueryBuilder.gt("OL_O_ID", N-l))
-        //         .and(QueryBuilder.lte("OL_O_ID", N))
-        //     ).all().stream().mapToInt(r -> r.getInt(0)).boxed().collect(Collectors.toList());
-        // //Step 3
-        // System.out.println(Connector.s.execute(QueryBuilder
-        //     .select("S_QUANTITY")
-        //     .from("stock_cnts")
-        //     .where(QueryBuilder.eq("S_W_ID", wid))
-        //     .and(QueryBuilder.in("S_I_ID", itemids))
-        // ).all().stream().mapToLong(r -> r.getLong(0)).map(q -> q <= t ? 1 : 0).count());
-
-        System.out.println("1");
-        MongoCollection<Document> districts = Connector.district;
-        System.out.println("2");
-        Document district = districts.find().first();
-        System.out.println("3");
-        System.out.println(district.toJson());
-        System.out.println("4");
-        /*BasicDBObject query = new BasicDBObject();
-        query.put("W_ID", wid);
-        query.put("D_ID", did);
-        FindIterable<Document> district = districts.findOne();        
-        long N = district.getLong("D NEXT O ID");        
-        System.out.println("N: " + N);*/  
+    public static void stockLevel(int wid, int did, long T, int L) {
+        //Processing 1
+        Document district = Connector.district.find(and(d_w_id.eq(wid), d_id.eq(did))).first();
+        int N = d_next_o_id.from(district).intValue();
+        //Processing 2
+        FindIterable<Document> S = Connector.order_line.find(and(ol_d_id.eq(did), ol_w_id.eq(wid), ol_o_id.gt(N-L)));
+        //Processing 3
+        S.forEach(new Block<Document>() {
+            @Override
+            public void apply(final Document document) {
+                Connector.stock.find(and(s_w_id.eq(wid), s_quantity.lt(T))).forEach(printBlock);
+            }
+        });
     }
 
     public static int max(FindIterable<Document> set, String object){
