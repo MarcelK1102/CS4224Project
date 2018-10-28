@@ -124,17 +124,16 @@ public class Transaction {
 
             //c
             String date = Date.from(Instant.now()).toString();//date not string
-            FindIterable<Document> orderlines_curr = orderlines.find(new BasicDBObject()
+
+            BasicDBObject ol_query = new BasicDBObject()
             .append("OL_W_ID", wid)
             .append("OL_D_ID", did)
-            .append("OL_O_ID", N));
-
-            orderlines.updateMany(
-            orderlines_curr,
+            .append("OL_O_ID", N);
+            orderlines.updateMany(ol_query,
             new Document("$set", new Document("OL_DELIVERY_D", date))); 
 
             //d
-            Iterator<Document> toAdd = orderlines_curr.iterator();
+            Iterator<Document> toAdd = orderlines.find(ol_query).iterator();
 
             double B = 0;
             while(toAdd.hasNext()){
