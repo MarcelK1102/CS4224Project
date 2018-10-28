@@ -3,6 +3,8 @@ package app;
 import static app.Table.*;
 import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Updates.combine;
+import static com.mongodb.client.model.Projections.*;
+import org.bson.Document;
 
 import java.math.BigDecimal;
 import java.security.InvalidKeyException;
@@ -254,12 +256,12 @@ public class Transaction {
         Document district = Connector.district.find(and(d_w_id.eq(wid), d_id.eq(did))).first();
         int N = d_next_o_id.from(district).intValue();
         //Processing 2
-        FindIterable<Document> S = Connector.order_line.find(and(ol_d_id.eq(did), ol_w_id.eq(wid), ol_o_id.gt(N-L)));
+        FindIterable<Document> S = Connector.order_line.find(and(ol_d_id.eq(did), ol_w_id.eq(wid), ol_o_id.gt(N-L))).projection(include(ol_i_id.s));
         //Processing 3
         S.forEach(new Block<Document>() {
             @Override
-            public void apply(final Document document) {
-                Connector.stock.find(and(s_w_id.eq(wid), s_quantity.lt(T))).forEach(printBlock);
+            public void apply(final Document s) {
+                Connector.stock.find(and(s_w_id.eq(wid), s_i_id.eq(ol_i_id.from(s)), s_quantity.lt(T))).forEach(printBlock);
             }
         });
     }
