@@ -53,7 +53,20 @@ public class Transaction {
 
     //Transaction 2
     public static void paymentTransaction(int cwid, int cdid, int cid, BigDecimal payment) {
+        onnector.s.execute(Connector.s.prepare(
+                "update warehouse_cnts set W_YTD = W_YTD + :d where W_ID = :d;"
+            ).bind(payment.longValue(), cwid));
+
+        //Step 2
+        Connector.s.execute(Connector.s.prepare(
+                "update district_cnts set D_YTD = D_YTD + :d where D_W_ID = :d and D_ID = :d;"
+            ).bind(payment.longValue(), cwid, cdid));
+
+        //Step 3
         
+        Connector.s.execute(Connector.s.prepare(
+                "update customer_cnts set C_BALANCE = C_BALANCE - :d, C_YTD_PAYMENT = C_YTD_PAYMENT + :d, C_PAYMENT_CNT = C_PAYMENT_CNT + 1 where C_W_ID = :d and C_D_ID = :d and C_ID = :d;"
+            ).bind(payment.longValue(), payment.longValue(), cwid, cdid, cid));
     }
 
     //Transaction 3
