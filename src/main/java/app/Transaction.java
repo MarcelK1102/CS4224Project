@@ -20,6 +20,7 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.Block;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Sorts;
 
 import org.bson.Document;
 
@@ -371,8 +372,23 @@ public class Transaction {
     
     //Transaction 7
     public static void topBalance(){
-        
-
+        final Document output = new Document();
+        Connector.customer.find().sort(Sorts.descending(c_balance.s)).limit(10).forEach(new Block<Document>() {
+            @Override
+            public void apply(final Document customer) {
+                Document warehouse = Connector.warehouse.find(w_id.eq(c_w_id.from(customer))).first(); 
+                Document district = Connector.district.find(and(d_w_id.eq(c_w_id.from(customer)), d_id.eq(c_d_id.from(customer)))).first(); 
+                Document suboutput = new Document();
+                suboutput.put(c_first.s, c_first.from(customer));
+                suboutput.put(c_middle.s, c_middle.from(customer));
+                suboutput.put(c_last.s, c_last.from(customer));
+                suboutput.put(c_balance.s, c_balance.from(customer));
+                suboutput.put(w_name.s, w_name.from(warehouse));
+                suboutput.put(d_name.s, d_name.from(district));
+                output.put(c_w_id.from(customer).toString(), suboutput);
+            }
+        });
+        System.out.println(output.toJson());
     }
     
     //Transaction 8
