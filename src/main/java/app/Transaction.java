@@ -71,7 +71,7 @@ public class Transaction {
         Document W = warehouse.find(new BasicDBObject()
             .append("W_ID", cwid)
         ).first();
-        warehouse.updateOne(W("$inc", new Document("W_YTD", payment)));
+        warehouse.updateOne(W,newDocument("$inc", new Document("W_YTD", payment)));
         district.updateOne(D,new Document("$inc", new Document("D_YTD", payment)));
         customer.updateOne(C, new Document("$inc", new Document("C_YTD_PAYMENT", payment).append("C_BALANCE", -payment).append("C_PAYMENT_CNT",1)));   
         System.out.println("C_W_ID: " + cwid + " C_D_ID: " + cdid + " C_ID: " + cid );
