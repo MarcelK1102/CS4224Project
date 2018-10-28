@@ -47,7 +47,7 @@ public class Transaction {
         Document W = warehouse.find(new BasicDBObject()
             .append("W_ID", cwid)
         ).first();
-        warehouse.updateOne(W("$inc", new Document("W_YTD", payment)));
+        warehouse.updateOne(W,newDocument("$inc", new Document("W_YTD", payment)));
         district.updateOne(D,new Document("$inc", new Document("D_YTD", payment)));
         customer.updateOne(C, new Document("$inc", new Document("C_YTD_PAYMENT", payment).append("C_BALANCE", -payment).append("C_PAYMENT_CNT",1)));   
         System.out.println("C_W_ID: " + cwid + " C_D_ID: " + cdid + " C_ID: " + cid );
@@ -94,16 +94,15 @@ public class Transaction {
 
             //c
             String date = Date.from(Instant.now()).toString();//date not string
-            FindIterable<Document> orderlines_curr = orderlines.find(new BasicDBObject()
+
+            BasicDBObject ol_query = new BasicDBObject()
             .append("OL_W_ID", wid)
             .append("OL_D_ID", did)
-            .append("OL_O_ID", N));
-
-            orderlines.updateMany(
-            orderlines_curr,
+            .append("OL_O_ID", N);
+            orderlines.updateMany(ol_query,
             new Document("$set", new Document("OL_DELIVERY_D", date))); 
             //d
-            Iterator<Document> toAdd = orderlines_curr.iterator();
+            Iterator<Document> toAdd = orderlines.find(ol_query).iterator();
 
             double B = 0;
             while(toAdd.hasNext()){
