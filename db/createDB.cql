@@ -22,7 +22,7 @@ CREATE TABLE district (
     D_ZIP VARCHAR,
     D_TAX DOUBLE,
     D_YTD DOUBLE,
-    D_NEXT_O_ID DOUBLE,
+    D_NEXT_O_ID INT,
     PRIMARY KEY(D_W_ID, D_ID )
 );
 

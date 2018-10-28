@@ -56,10 +56,10 @@ fs = {
 	"java.math.BigInteger" : "getVarint"
 }
 
-buf = open("createDB.cql", "r").read()
+buf = open("db/createDB.cql", "r").read()
 alpha = re.compile(r'[\W]+')
 tables = {}
-f = open("../src/main/java/app/Table.java", "w")
+f = open("src/main/java/app/Table.java", "w")
 f.write("""package app;
 
 import org.bson.Document;
@@ -83,6 +83,14 @@ public class Table{
 
 		public Bson eq(T value){
 			return Filters.eq(s, value);
+		}
+
+		public Bson lt(T value){
+			return Filters.lt(s, value);
+		}
+
+		public Bson gt(T value){
+			return Filters.gt(s, value);
 		}
 
 		public Bson inc(Number n){
