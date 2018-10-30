@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.Block;
@@ -394,5 +395,68 @@ public class Transaction {
     //Transaction 8
     public static void relatedCustomer(int cwid, int cdid, int cid) {
         
+    //Find all tuples in orders for this customer
+    System.out.println("C_W_ID: " + cwid + " C_D_ID: " + cdid + " C_ID: "+ cid);
+
+    Iterator<Document> orders = Connector.order.find(new BasicDBObject()
+    .append("O_C_ID", cid)
+    .append("O_W_ID", cwid)
+    .append("O_D_ID", cdid)).iterator();
+
+    while(orders.hasNext()){
+        Document order = orders.next();
+        //Find all items for that order
+        Iterator<Document> items = Connector.order_line.find(new BasicDBObject()
+            .append("OL_W_ID", cwid)
+            .append("OL_D_ID", cdid)
+            .append("OL_O_ID",order.getInteger("O_ID"))
+        ).iterator();
+        
+        Map<Integer, Pair> oids = new HashMap<>();
+        while(items.hasNext()){
+            Document item = items.next();
+            int itemId = item.getInteger("OL_I_ID");
+            // System.out.println(item);
+            //for this item we need to find OL_O_ID that has the same item
+            List<Iterator<Document>> otherorders = new ArrayList<Iterator<Document>>();
+
+            otherorders.add(
+                Connector.order_line.find(
+                    new BasicDBObject()
+                        .append("OL_D_ID", cdid)
+                        .append("OL_I_ID", item.getInteger("OL_I_ID"))
+                        .append("OL_W_ID",  new BasicDBObject("$lt",cwid))
+                ).iterator()
+            );
+
+            otherorders.add(
+                Connector.order_line.find(
+                    new BasicDBObject()
+                        .append("OL_D_ID", cdid)
+                        .append("OL_I_ID", item.getInteger("OL_I_ID"))
+                        .append("OL_W_ID",  new BasicDBObject("$gt",cwid))
+                ).iterator()
+            );
+
+            for(Iterator<Document> otherorder : otherorders){
+                while(otherorder.hasNext()){
+                    Document orderO = otherorder.next();
+                    Integer oloid = orderO.getInteger("OL_O_ID");
+                    if(!oids.containsKey(oloid))
+                        oids.put(oloid, new Pair(itemId, -1));
+                    else {
+                        Pair p = oids.get(oloid);
+                        if(p.a != itemId && p.b < 0){
+                            p.b = itemId;
+                            System.out.println("C_ID: " + Connector.order.find(new BasicDBObject()
+                                .append("O_W_ID", orderO.getInteger("OL_W_ID"))
+                                .append("O_D_ID", orderO.getInteger("OL_D_ID"))
+                                .append("O_ID", oloid)).first().getInteger("O_C_ID"));
+                        }
+                    }
+                }
+            }
+        }
     }
+}
 }
