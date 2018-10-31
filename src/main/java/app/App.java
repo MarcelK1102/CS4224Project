@@ -16,9 +16,7 @@ public class App {
         Connector.connect();
         System.out.println("connected");
         Client.handleInput(Integer.parseInt(args[0]));
-        // Transaction.newOrder(1, 1, 1, Arrays.asList(1,2,3), Arrays.asList(1,1,1), Arrays.asList(123L,321L,312L)); 
-        // Transaction.stockLevel(1, 5, 1, 1);
-        // Transaction.popularItem(1, 1, 800);
+        Client.printStats();
         Connector.close();
     }
 

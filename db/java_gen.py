@@ -2,58 +2,30 @@ import re
 
 conv = {
 	"INT" : "Integer",
-	"ASCII" : "java.lang.String",
+	"ASCII" : "String",
 	"BIGINT" : "Long",
-	"BLOB" : "java.nio.ByteBuffer",
+	"BLOB" : "ByteBuffer",
 	"BOOLEAN" : "Boolean",
 	"COUNTER" : "Long",
 	"DATE" : "LocalDate",
-	"DECIMAL" : "java.math.BigDecimal",
+	"DECIMAL" : "BigDecimal",
 	"DOUBLE" : "Double",
 	"FLOAT" : "Float",
-	"INET" : "java.net.InetAddress",
+	"INET" : "InetAddress",
 	"INT" : "Integer",
-	"LIST" : "java.util.List",
-	"MAP" : "java.util.Map",
-	"SET" : "java.util.Set",
+	"LIST" : "List",
+	"MAP" : "Map",
+	"SET" : "Set",
 	"SMALLINT" : "Short",
-	"TEXT" : "java.lang.String",
+	"TEXT" : "String",
 	"TIME" : "Long",
-	"TIMESTAMP" : "java.util.Date",
-	"TIMEUUID" : "java.util.UUID",
+	"TIMESTAMP" : "Date",
+	"TIMEUUID" : "UUID",
 	"TINYINT" : "Byte",
 	"TUPLE" : "TupleValue",
-	"USER" : "defined types	getUDTValue	UDTValue",
-	"UUID" : "java.util.UUID",
-	"VARCHAR" : "java.lang.String",
-	"VARINT" : "java.math.BigInteger"
-}
-
-fs = {
-	"java.lang.String" : "getString",
-	"Long" : "getLong",
-	"java.nio.ByteBuffer" : "getBytes",
-	"Boolean" : "getBool",
-	"Long" : "getLong",
-	"LocalDate" : "getDate",
-	"java.math.BigDecimal" : "getDecimal",
-	"Double" : "getDouble",
-	"Float" : "getFloat",
-	"java.net.InetAddress" : "getInet",
-	"Integer" : "getInt",
-	"java.util.List" : "getList",
-	"java.util.Map" : "getMap",
-	"java.util.Set" : "getSet",
-	"short" : "getShort",
-	"java.lang.String" : "getString",
-	"Long" : "getTime",
-	"java.util.Date" : "getTimestamp",
-	"java.util.UUID" : "getUUID",
-	"Byte" : "getByte",
-	"TupleValue" : "getTupleValue",
-	"java.util.UUID" : "getUUID",
-	"java.lang.String" : "getString",
-	"java.math.BigInteger" : "getVarint"
+	"UUID" : "UUID",
+	"VARCHAR" : "String",
+	"VARINT" : "BigInteger"
 }
 
 buf = open("db/createDB.cql", "r").read()
@@ -62,23 +34,44 @@ tables = {}
 f = open("src/main/java/app/Table.java", "w")
 f.write("""package app;
 
-import org.bson.Document;
-import org.bson.conversions.Bson;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Date;
 
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
 
+import org.bson.Document;
+import org.bson.conversions.Bson;
+
 public class Table{
+	public interface ParseInterface<T> {
+		public T parse(String value);
+	}
+
+	public static ParseInterface<Integer> parseInteger = s -> (int) Double.parseDouble(s);
+	public static ParseInterface<String> parseString = s -> s;
+	public static ParseInterface<Long> parseLong = s -> (long) Double.parseDouble(s);
+	public static ParseInterface<Double> parseDouble = s -> Double.parseDouble(s);
+	public static ParseInterface<Float> parseFloat = s -> Float.parseFloat(s);
+	public static ParseInterface<Date> parseDate = s -> Date.from(LocalDate.parse(s).atStartOfDay(ZoneId.systemDefault()).toInstant());
+
 	public static class Entry<T> {
 		public String s;
 		public Class<T> t;
-		public Entry(String s, Class<T> t){
+		public ParseInterface<T> parser;
+		public Entry(String s, Class<T> t, ParseInterface<T> parser){
 			this.s = s;
 			this.t = t;
+			this.parser = parser;
 		}
 
 		public T from(Document d){
-			return d.get(s, t);
+			try{
+				return d.get(s, t);
+			} catch(ClassCastException e){
+				return parser.parse(d.get(s).toString());
+			}
 		}
 
 		public Bson eq(T value){
@@ -88,7 +81,7 @@ public class Table{
 		public Bson lt(T value){
 			return Filters.lt(s, value);
 		}
-
+		
 		public Bson gt(T value){
 			return Filters.gt(s, value);
 		}
@@ -125,6 +118,6 @@ for statement in buf.split(");"):
 	ss = []
 	ts = []
 	for k, t in columns.items():
-		f.write('\tpublic static final Entry<{}> {} = new Entry<>("{}",{});\n'.format(t, k.lower(), k, t + ".class"))
+		f.write('\tpublic static final Entry<{}> {} = new Entry<>("{}",{}, {});\n'.format(t, k.lower(), k, t + ".class", "parse"+t))
 f.write("}\n")
 f.close()
