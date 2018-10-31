@@ -6,8 +6,6 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
 import org.bson.Document;
-import org.bson.codecs.configuration.CodecRegistry;
-import org.bson.codecs.pojo.PojoCodecProvider;
 
 public class Connector {
     public static String database = "warehouse";
@@ -19,41 +17,51 @@ public class Connector {
         "192.168.48.253"
     };
 
-    public static MongoDatabase db;
+    public static String connectorString = "mongodb://" + String.join(",", contactPoints);
+
     public static MongoCollection<Document> warehouse;
     public static MongoCollection<Document> district;
     public static MongoCollection<Document> item;
     public static MongoCollection<Document> order;
     public static MongoCollection<Document> stock;
-    public static MongoCollection<Document> order_line;
+    public static MongoCollection<Document> orderLine;
     public static MongoCollection<Document> customer;
+    public static com.mongodb.async.client.MongoCollection<Document> warehouseAsync;
+    public static com.mongodb.async.client.MongoCollection<Document> districtAsync;
+    public static com.mongodb.async.client.MongoCollection<Document> itemAsync;
+    public static com.mongodb.async.client.MongoCollection<Document> orderAsync;
+    public static com.mongodb.async.client.MongoCollection<Document> stockAsync;
+    public static com.mongodb.async.client.MongoCollection<Document> orderLineAsync;
+    public static com.mongodb.async.client.MongoCollection<Document> customerAsync;
 
     private static MongoClient mongoclient;
-    
-    // public static Session s;
-    // private static Cluster cluster;
+    private static com.mongodb.async.client.MongoClient mongoClientAsync;
+
     public static void connect(){
-       // Connector.mongoclient = MongoClients.create("mongodb://" + String.join(",",contactPoints));
-       //ClusterSettings clusterSettings = ClusterSettings.builder().hosts(asList(new ServerAddress("localhost"))).build();
-        //MongoClientSettings settings = MongoClientSettings.builder().clusterSettings(clusterSettings).build();
-        mongoclient = MongoClients.create("mongodb://" + String.join(",", contactPoints));
-        db = Connector.mongoclient.getDatabase(Connector.database);
+        mongoclient = MongoClients.create(connectorString);
+        MongoDatabase db = mongoclient.getDatabase(database);
         warehouse = db.getCollection("warehouse");
         district = db.getCollection("district");
         item = db.getCollection("item");
         order = db.getCollection("order");
         stock = db.getCollection("stock");
-        order_line = db.getCollection("order_line");
+        orderLine = db.getCollection("order_line");
         customer = db.getCollection("customer");
+        
+        mongoClientAsync = com.mongodb.async.client.MongoClients.create(connectorString);
+        com.mongodb.async.client.MongoDatabase dbAsync = mongoClientAsync.getDatabase(database);
+        warehouseAsync = dbAsync.getCollection("warehouse");
+        districtAsync = dbAsync.getCollection("district");
+        itemAsync = dbAsync.getCollection("item");
+        orderAsync = dbAsync.getCollection("order");
+        stockAsync = dbAsync.getCollection("stock");
+        orderLineAsync = dbAsync.getCollection("order_line");
+        customerAsync = dbAsync.getCollection("customer");
     }
 
     public static void close() {
-        // if(s != null){
-        //     s.close();
-        //     s = null;
-        // }
-        // cluster.close();
         mongoclient.close();
+        mongoClientAsync.close();
     }
 
 }

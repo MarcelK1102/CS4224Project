@@ -23,8 +23,6 @@ import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Sorts;
 
-import org.bson.Document;
-
 public class Transaction {
     static Block<Document> printBlock = new Block<Document>() {
         @Override
@@ -51,7 +49,7 @@ public class Transaction {
         order.put(o_carrier_id.s, null);
         order.put(o_ol_cnt.s, ids.size()); 
         order.put(o_all_local.s, wids.stream().allMatch(i -> i == wid) ? 1 : 0);
-        Connector.order.insertOne(order);
+        Connector.orderAsync.insertOne(order, (r, t) -> {});
         
         //Output 1
         output.put(w_id.s, wid);
@@ -68,6 +66,7 @@ public class Transaction {
         //Processing 4
         double totalAmount = 0;
         //Processing 5
+        List<Document> orderLines = new ArrayList<>();
         for(int i = 0; i < ids.size(); i++){
             //Processing d
             Document stock = Connector.stock.findOneAndUpdate(
@@ -102,8 +101,7 @@ public class Transaction {
             orderLine.put(ol_amount.s, itemAmount);
             orderLine.put(ol_delivery_d.s, null);
             orderLine.put(ol_dist_info.s, "S_DIST_" + String.format("%02d", did));
-            Connector.order_line.insertOne(orderLine);
-
+            orderLines.add(orderLine);
             //Output 5
             Document suboutput = new Document();
             //Output a
@@ -120,6 +118,7 @@ public class Transaction {
             suboutput.put(s_quantity.s, quantity);
             output.put(""+i, suboutput);
         }
+        Connector.orderLineAsync.insertMany(orderLines, (r,t) -> {});
         totalAmount *= (1 + d_tax.from(district).doubleValue() + w_tax.from(warehouse).doubleValue()) * (1 - c_discount.from(customer).doubleValue());
         //output 4
         output.put("NUM_ITEMS", ids.size());
@@ -189,10 +188,10 @@ public class Transaction {
             .append("OL_W_ID", wid)
             .append("OL_D_ID", did)
             .append("OL_O_ID", N);
-            Connector.order_line.updateMany(ol_query,
+            Connector.orderLine.updateMany(ol_query,
             new Document("$set", new Document("OL_DELIVERY_D", date))); 
             //d
-            Iterator<Document> toAdd = Connector.order_line.find(ol_query).iterator();
+            Iterator<Document> toAdd = Connector.orderLine.find(ol_query).iterator();
 
             double B = 0;
             while(toAdd.hasNext()){
@@ -236,7 +235,7 @@ public class Transaction {
         System.out.println("O_CARRIER_ID: " + lastOrder.getInteger("O_CARRIER_ID"));
 
         //Step 3
-        Iterator<Document> ol_it = Connector.order_line.find(new BasicDBObject()
+        Iterator<Document> ol_it = Connector.orderLine.find(new BasicDBObject()
         .append("OL_W_ID", c_wid)
         .append("OL_D_ID", c_did)
         .append("OL_O_ID", oid))
@@ -258,7 +257,7 @@ public class Transaction {
         Document district = Connector.district.find(and(d_w_id.eq(wid), d_id.eq(did))).first();
         int N = d_next_o_id.from(district).intValue();
         //Processing 2
-        FindIterable<Document> S = Connector.order_line.find(and(ol_d_id.eq(did), ol_w_id.eq(wid), ol_o_id.gt(N-L))).projection(include(ol_i_id.s));
+        FindIterable<Document> S = Connector.orderLine.find(and(ol_d_id.eq(did), ol_w_id.eq(wid), ol_o_id.gt(N-L))).projection(include(ol_i_id.s));
         //Processing 3
         S.forEach(new Block<Document>() {
             @Override
@@ -308,9 +307,9 @@ public class Transaction {
         HashMap<Integer, HashSet<Integer>> popularItems = new HashMap<>();
         //itemID -> Quantity
         HashMap<Pair,Integer> popItemQuantity = new HashMap<>();
-        MongoCollection<Document> order_line = Connector.order_line;
+        MongoCollection<Document> orderLine = Connector.orderLine;
         BasicDBObject query = new BasicDBObject().append("OL_D_ID",did).append("OL_W_ID",wid);
-        FindIterable<Document> tmp = order_line.find(query);
+        FindIterable<Document> tmp = orderLine.find(query);
         while(it.hasNext()){
             Document currentOrder = it.next();
             int O_ID = currentOrder.getInteger("O_ID");
@@ -406,7 +405,7 @@ public class Transaction {
     while(orders.hasNext()){
         Document order = orders.next();
         //Find all items for that order
-        Iterator<Document> items = Connector.order_line.find(new BasicDBObject()
+        Iterator<Document> items = Connector.orderLine.find(new BasicDBObject()
             .append("OL_W_ID", cwid)
             .append("OL_D_ID", cdid)
             .append("OL_O_ID",order.getInteger("O_ID"))
@@ -421,7 +420,7 @@ public class Transaction {
             List<Iterator<Document>> otherorders = new ArrayList<Iterator<Document>>();
 
             otherorders.add(
-                Connector.order_line.find(
+                Connector.orderLine.find(
                     new BasicDBObject()
                         .append("OL_D_ID", cdid)
                         .append("OL_I_ID", item.getInteger("OL_I_ID"))
@@ -430,7 +429,7 @@ public class Transaction {
             );
 
             otherorders.add(
-                Connector.order_line.find(
+                Connector.orderLine.find(
                     new BasicDBObject()
                         .append("OL_D_ID", cdid)
                         .append("OL_I_ID", item.getInteger("OL_I_ID"))
