@@ -133,9 +133,9 @@ public class Transaction {
         Document C = Connector.customer.find(and(c_id.eq(cid),c_d_id.eq(cdid),c_w_id.eq(cwid))).first();
         Document D = Connector.district.find(and(d_id.eq(cdid),d_w_id.eq(cwid))).first();
         Document W = Connector.warehouse.find(w_id.eq(cwid)).first();
-        Connector.warehouse.updateOne(W,new Document("$inc", new Document("W_YTD", payment)));
-        Connector.district.updateOne(D,new Document("$inc", new Document("D_YTD", payment)));
-        Connector.customer.updateOne(C, new Document("$inc", new Document("C_YTD_PAYMENT", payment).append("C_BALANCE", -payment).append("C_PAYMENT_CNT",1)));   
+        Connector.warehouse.updateOne(W,w_ytd.inc(payment));
+        Connector.district.updateOne(D,d_ytd.inc(payment));
+        Connector.customer.updateOne(C,and(c_ytd_payment.inc(payment),c_balance.inc(-payment),c_payment_cnt.inc(1)));   
         System.out.println("C_W_ID: " + cwid + " C_D_ID: " + cdid + " C_ID: " + cid );
         System.out.println("Name: " + C.get("C_FIRST") +" " + C.get("C_MIDDLE") + " "+ C.get("C_LAST"));
         System.out.println("Adress: " + C.get("C_STREET_1") +" "+ C.get("C_STREET_2") + " "+ C.get("C_CITY") + " " +
