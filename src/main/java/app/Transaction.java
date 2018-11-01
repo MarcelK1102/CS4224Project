@@ -130,18 +130,9 @@ public class Transaction {
     //Transaction 2
     public static void paymentTransaction(int cwid, int cdid, int cid, BigDecimal payment2) {
         Integer payment = payment2.intValue();
-        Document C = Connector.customer.find(new BasicDBObject()
-        .append("C_ID", cid)
-        .append("C_D_ID", cdid)
-        .append("C_W_ID", cwid)
-        ).first();
-        Document D = Connector.district.find(new BasicDBObject()
-            .append("D_ID", cdid)
-            .append("D_W_ID", cwid)
-        ).first();
-        Document W = Connector.warehouse.find(new BasicDBObject()
-            .append("W_ID", cwid)
-        ).first();
+        Document C = Connector.customer.find(and(c_id.eq(cid),c_d_id.eq(cdid),c_w_id.eq(cwid))).first();
+        Document D = Connector.district.find(and(d_id.eq(cdid),d_w_id.eq(cwid))).first();
+        Document W = Connector.warehouse.find(w_id.eq(cwid)).first();
         Connector.warehouse.updateOne(W,new Document("$inc", new Document("W_YTD", payment)));
         Connector.district.updateOne(D,new Document("$inc", new Document("D_YTD", payment)));
         Connector.customer.updateOne(C, new Document("$inc", new Document("C_YTD_PAYMENT", payment).append("C_BALANCE", -payment).append("C_PAYMENT_CNT",1)));   
@@ -251,22 +242,15 @@ public class Transaction {
         });
     }
 
-    public static int max(FindIterable<Document> set, String object){
-        int maximum = 0;
-        Iterator<Document> it = set.iterator();
-        while(it.hasNext()){
-            Document tmp = it.next();
-            
-            if(maximum<tmp.getInteger(object))
-                maximum = tmp.getInteger(object);
-        }
-        return maximum;
-    }
 
     //Transaction 6
     public static void popularItem(int wid, int did, int L) {
         //P Step 1
         MongoCollection<Document> districts = Connector.district;
+<<<<<<< HEAD
+        Document district = districts.find(and(d_w_id.eq(wid),d_id.eq(did))).first();        
+        Integer N = d_next_o_id.from(district);
+=======
         Document district = districts.find(
             new BasicDBObject()
             .append("D_W_ID",wid)
@@ -274,40 +258,41 @@ public class Transaction {
         ).first();        
         //falscher datentyp
         Integer N = (int) (0 + d_next_o_id.from(district));
+>>>>>>> 2d8e3d181e01e57cc1599c97aa5f6acb2740f81f
         //P Step 2
-        //MongoCollection<Document> S = Connector.order;
-        FindIterable<Document> S =  Connector.order.find(
-            new BasicDBObject()
-            .append("O_W_ID", wid)
-            .append("O_D_ID", did)
-            .append("O_ID", new BasicDBObject("$gte",N-L).append("$lt",N))
-        );
-        //First Print
+        FindIterable<Document> S =  Connector.order.find(and(o_w_id.eq(wid),o_d_id.eq(did),o_id.gte(N-L),o_id.lt(N)));
+            
         Iterator<Document> it = S.iterator();
         ArrayList<Integer> orders = new ArrayList<Integer>();
-        //orderNumber -> allItems
-        HashMap<Integer, HashSet<Integer>> allItems = new HashMap<>();
-        //orderNumber -> popularItems
-        HashMap<Integer, HashSet<Integer>> popularItems = new HashMap<>();
-        //itemID -> Quantity
-        HashMap<Pair,Integer> popItemQuantity = new HashMap<>();
+
+        
+        HashMap<Integer, HashSet<Integer>> allItems = new HashMap<>();//orderNumber -> allItems
+
+        HashMap<Integer, HashSet<Integer>> popularItems = new HashMap<>();//orderNumber -> popularItems
+
+        HashMap<Pair,Integer> popItemQuantity = new HashMap<>();//itemID -> Quantity
+
         MongoCollection<Document> orderLine = Connector.orderLine;
         BasicDBObject query = new BasicDBObject().append("OL_D_ID",did).append("OL_W_ID",wid);
-        FindIterable<Document> tmp = orderLine.find(query);
+       
+
+        FindIterable<Document> tmp = orderLine.find(and(ol_d_id.eq(did),ol_w_id.eq(wid)));
         while(it.hasNext()){
             Document currentOrder = it.next();
-            int O_ID = currentOrder.getInteger("O_ID");
-            FindIterable<Document> tmp2 = tmp.filter(query.append("OL_O_ID", O_ID));
-            Integer max = tmp2.sort(new BasicDBObject("OL_QUANTITY",-1)).first().getInteger("OL_QUANTITY");            
-            FindIterable<Document> Items =  tmp2.filter(query.append("OL_QUANTITY", max).append("OL_O_ID",O_ID));
+            int O_ID = o_id.from(currentOrder);
+            FindIterable<Document> tmp2 = tmp.filter(ol_o_id.eq(O_ID));
+            if(tmp2==null||tmp2.first()==null)
+                continue;
+            Integer max = ol_quantity.from(tmp2.sort(new BasicDBObject("OL_QUANTITY",-1)).first());            
+            FindIterable<Document> Items =  tmp.filter(and(ol_d_id.eq(did),ol_w_id.eq(wid),ol_quantity.eq(max),ol_o_id.eq(O_ID)));
             Iterator<Document> it2 = Items.iterator();
             HashSet<Integer> items = new HashSet<>();
             HashSet<Integer> popItems = new HashSet<>();
             while(it2.hasNext()){
                 Document Item = it2.next();
-                items.add(Item.getInteger("OL_I_ID"));
-                popItemQuantity.put(new Pair(O_ID,Item.getInteger("OL_I_ID")),Item.getInteger("OL_QUANTITY"));
-                popItems.add(Item.getInteger("OL_I_ID"));
+                items.add(ol_i_id.from(Item));
+                popItemQuantity.put(new Pair(O_ID,ol_i_id.from(Item)),ol_quantity.from(Item));
+                popItems.add(ol_i_id.from(Item));
             }
             allItems.put(O_ID,items);
             popularItems.put(O_ID,popItems);
@@ -316,30 +301,17 @@ public class Transaction {
         for(Integer o : orders ){
             //3.a
             
-            Document Order = Connector.order.find(
-                new BasicDBObject()
-                .append("O_W_ID", wid)
-                .append("O_D_ID", did)
-                .append("O_ID",o)
-            ).first();
+            Document Order = Connector.order.find(and(o_w_id.eq(wid),o_d_id.eq(did),o_id.eq(o))).first();
             
-            System.out.println("Order ID: " + o + " Date " + Order.getString("O_ENTRY_D"));
+            System.out.println("Order ID: " + o + " Date " + o_entry_d.from(Order));
             //3.b
-            Document Customer = Connector.customer.find(
-                new BasicDBObject()
-                .append("C_W_ID", wid)
-                .append("C_D_ID", did)
-                .append("C_ID",Order.getInteger("O_C_ID"))
-            ).first();
+            Document Customer = Connector.customer.find(and(c_w_id.eq(wid),c_d_id.eq(did),c_id.eq(o_c_id.from(Order)))).first();
             //Wrapper.findCustomer(wid,did,Order.getInt("O_C_ID"));
-            System.out.println("CName: " + Customer.getString("C_FIRST") + " " + Customer.getString("C_MIDDLE") + " " +Customer.getString("C_LAST"));
+            System.out.println("CName: " + c_first.from(Customer) + " " + c_middle.from(Customer) + " " + c_last.from(Customer));
             for(Integer i : popularItems.get(o)){
                 //4.a
-                Document I = Connector.item.find(
-                    new BasicDBObject()
-                    .append("I_ID", i)
-                ).first();
-                System.out.println("Popular Item: " + I.getString("I_NAME") + " Quantity: " + popItemQuantity.get(new Pair(o,i)));
+                Document I = Connector.item.find(i_id.eq(i)).first();
+                System.out.println("Popular Item: " + i_name.from(I) + " Quantity: " + popItemQuantity.get(new Pair(o,i)));
                 int counter = 0;
                 for(Integer t : orders){
                     if(allItems.get(t)==null)
