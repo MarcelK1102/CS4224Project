@@ -145,15 +145,15 @@ public class Transaction {
         Connector.district.updateOne(D,new Document("$inc", new Document("D_YTD", payment)));
         Connector.customer.updateOne(C, new Document("$inc", new Document("C_YTD_PAYMENT", payment).append("C_BALANCE", -payment).append("C_PAYMENT_CNT",1)));   
         System.out.println("C_W_ID: " + cwid + " C_D_ID: " + cdid + " C_ID: " + cid );
-        System.out.println("Name: " + C.getString("C_FIRST") +" " + C.getString("C_MIDDLE") + " "+ C.getString("C_LAST"));
-        System.out.println("Adress: " + C.getString("C_STREET_1") +" "+ C.getString("C_STREET_2") + " "+ C.getString("C_CITY") + " " +
-                                        C.getString("C_STATE") +" " + C.getString("C_ZIP") );
-        System.out.println("Phone: " + C.getString("C_PHONE"));
-        System.out.println("Since: " + C.getString("C_SINCE"));
-        System.out.println("Credit Information: "+ C.getString("C_CREDIT") + " Limit: " + C.getInteger("C_CREDIT_LIM") + " Discount: " + C.getInteger("C_DISCOUNT") + " Balance: " + C.getInteger("C_BALANCE") );
+        System.out.println("Name: " + C.get("C_FIRST") +" " + C.get("C_MIDDLE") + " "+ C.get("C_LAST"));
+        System.out.println("Adress: " + C.get("C_STREET_1") +" "+ C.get("C_STREET_2") + " "+ C.get("C_CITY") + " " +
+                                        C.get("C_STATE") +" " + C.get("C_ZIP") );
+        System.out.println("Phone: " + C.get("C_PHONE"));
+        System.out.println("Since: " + C.get("C_SINCE"));
+        System.out.println("Credit Information: "+ C.get("C_CREDIT") + " Limit: " + C.get("C_CREDIT_LIM") + " Discount: " + C.get("C_DISCOUNT") + " Balance: " + C.get("C_BALANCE") );
         
-        System.out.println("Warehouse: " + W.getString("W_STREET_1") + " " + W.getString("W_STREET_2") +" " + W.getString("W_CITY") +" "+ W.getString("W_STATE") +" "+ W.getString("W_ZIP"));
-        System.out.println("District: " + D.getString("D_STREET_1") + " "+ D.getString("D_STREET_2") +" "+ D.getString("D_CITY") +" "+ D.getString("D_STATE") +" "+ D.getString("D_ZIP"));
+        System.out.println("Warehouse: " + W.get("W_STREET_1") + " " + W.get("W_STREET_2") +" " + W.get("W_CITY") +" "+ W.get("W_STATE") +" "+ W.get("W_ZIP"));
+        System.out.println("District: " + D.get("D_STREET_1") + " "+ D.get("D_STREET_2") +" "+ D.get("D_CITY") +" "+ D.get("D_STATE") +" "+ D.get("D_ZIP"));
         System.out.println("Payment: " + payment);
 
      }
@@ -211,10 +211,7 @@ public class Transaction {
     public static void getOrderStatus(int c_wid, int c_did, int cid) throws InvalidKeyException{
 
         //Step 1
-        Document customer =  Connector.customer.find(new BasicDBObject()
-        .append("C_W_ID", c_wid)
-        .append("C_D_ID", c_did)
-        .append("C_ID", cid)).first();
+        Document customer =  Connector.customer.find(and(c_w_id.eq(c_wid), c_d_id.eq(c_did), c_id.eq(cid))).first();
         System.out.println("Name: " + customer.getString("C_FIRST") + " " + customer.getString("C_MIDDLE") + " " + customer.getString("C_LAST"));
         System.out.println("Balance: " + customer.getDouble("C_BALANCE"));
 
@@ -289,7 +286,7 @@ public class Transaction {
             .append("D_ID", did)
         ).first();        
         //falscher datentyp
-        Integer N = (int) (0 + district.getDouble("D_NEXT_O_ID"));
+        Integer N = (int) (0 + d_next_o_id.from(district));
         //P Step 2
         //MongoCollection<Document> S = Connector.order;
         FindIterable<Document> S =  Connector.order.find(
