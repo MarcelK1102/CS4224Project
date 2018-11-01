@@ -1,5 +1,8 @@
 package app;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
@@ -14,13 +17,14 @@ public class Table{
 	public interface ParseInterface<T> {
 		public T parse(String value);
 	}
-
+	static DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+											   //2018-09-07 19:01:58.557
 	public static ParseInterface<Integer> parseInteger = s -> (int) Double.parseDouble(s);
 	public static ParseInterface<String> parseString = s -> s;
 	public static ParseInterface<Long> parseLong = s -> (long) Double.parseDouble(s);
 	public static ParseInterface<Double> parseDouble = s -> Double.parseDouble(s);
 	public static ParseInterface<Float> parseFloat = s -> Float.parseFloat(s);
-	public static ParseInterface<Date> parseDate = s -> Date.from(LocalDate.parse(s).atStartOfDay(ZoneId.systemDefault()).toInstant());
+	public static ParseInterface<Date> parseDate = s -> {try{return df.parse(s);}catch(ParseException pe){return null;} };
 
 	public static class Entry<T> {
 		public String s;
@@ -51,12 +55,17 @@ public class Table{
 		public Bson gt(T value){
 			return Filters.gt(s, value);
 		}
+<<<<<<< HEAD
 		public Bson gte(T value){
 			return Filters.gte(s, value);
 		}
 		public Bson lte(T value){
 			return Filters.lte(s, value);
 		}
+=======
+
+
+>>>>>>> 2d8e3d181e01e57cc1599c97aa5f6acb2740f81f
 		public Bson inc(Number n){
 			return Updates.inc(s, n);
 		}

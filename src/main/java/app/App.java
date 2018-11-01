@@ -11,7 +11,7 @@ public class App {
 
     public static void main(String args[]) {
         //Disable logging:
-        ((LoggerContext) LoggerFactory.getILoggerFactory()).getLogger("org.mongodb.driver").setLevel(Level.ERROR);
+        // ((LoggerContext) LoggerFactory.getILoggerFactory()).getLogger("org.mongodb.driver").setLevel(Level.OFF  );
 
         Connector.connect();
         System.out.println("connected");
