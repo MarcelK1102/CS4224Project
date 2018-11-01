@@ -5,6 +5,7 @@ import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Updates.combine;
 import static com.mongodb.client.model.Projections.*;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 
 import java.math.BigDecimal;
 import java.security.InvalidKeyException;
@@ -162,9 +163,7 @@ public class Transaction {
     public static void processDelivery(int wid, int carrierid) {
         for (int did = 1; did <= 10; did++){
 
-            FindIterable<Document> orders_curr = Connector.order.find(new BasicDBObject()
-            .append("O_W_ID", wid)
-            .append("O_D_ID", did));
+            FindIterable<Document> orders_curr = Connector.order.find(and(o_w_id.eq(wid), o_d_id.eq(did)));
 
             Document order = orders_curr.filter(new BasicDBObject("O_CARRIER_ID", "null"))
             .sort(new BasicDBObject("O_ID", 1))
@@ -174,20 +173,17 @@ public class Transaction {
             if (order == null){
                 continue;
             }
-            int N = order.getInteger("O_ID");
-            int cid = order.getInteger("O_C_ID");
+            int N = o_id.from(order);
+            int cid = o_c_id.from(order);
 
             //b
-            Connector.order.updateOne(orders_curr.filter(new BasicDBObject().append("O_ID", N)).first(), 
+            Connector.order.updateOne(orders_curr.filter(o_id.eq(N)).first(), 
             new Document("$set", new Document().append("O_CARRIER_ID", carrierid)));
 
             //c
-            String date = Date.from(Instant.now()).toString();//date not string
+            String date = Date.from(Instant.now()).toString();
 
-            BasicDBObject ol_query = new BasicDBObject()
-            .append("OL_W_ID", wid)
-            .append("OL_D_ID", did)
-            .append("OL_O_ID", N);
+            Bson ol_query = and(ol_w_id.eq(wid), ol_d_id.eq(did), ol_o_id.eq(N));
             Connector.orderLine.updateMany(ol_query,
             new Document("$set", new Document("OL_DELIVERY_D", date))); 
             //d
@@ -195,59 +191,46 @@ public class Transaction {
 
             double B = 0;
             while(toAdd.hasNext()){
-                B += toAdd.next().getDouble("OL_AMOUNT");
+                B += ol_amount.from(toAdd.next());
             }
 
-            Connector.customer.updateOne(new BasicDBObject()
-            .append("C_W_ID", wid)
-            .append("C_D_ID", did)
-            .append("C_ID", cid),
-            new Document("$inc", new Document()
-            .append("C BALANCE", B)
-            .append("C_DELIVERY_CNT", 1)));
+            Connector.customer.updateOne(and(c_w_id.eq(wid), c_d_id.eq(did), c_id.eq(cid)),
+            and(c_balance.inc(B), c_delivery_cnt.inc(1)));
         }
     }
     //Transaction 4
     public static void getOrderStatus(int c_wid, int c_did, int cid) throws InvalidKeyException{
 
         //Step 1
-        Document customer =  Connector.customer.find(new BasicDBObject()
-        .append("C_W_ID", c_wid)
-        .append("C_D_ID", c_did)
-        .append("C_ID", cid)).first();
-        System.out.println("Name: " + customer.getString("C_FIRST") + " " + customer.getString("C_MIDDLE") + " " + customer.getString("C_LAST"));
-        System.out.println("Balance: " + customer.getDouble("C_BALANCE"));
+        Document customer =  Connector.customer.find(and(c_w_id.eq(c_wid), c_d_id.eq(c_did), c_id.eq(cid))).first();
+        System.out.println("Name: " + c_first.from(customer) + " " + c_middle.from(customer) + " " + c_last.from(customer));
+        System.out.println("Balance: " + c_balance.from(customer));
 
         //Step 2
-        Document lastOrder = Connector.order.find(new BasicDBObject()
-        .append("O_W_ID", c_wid)
-        .append("O_D_ID", c_did)
-        .append("O_C_ID", cid))
-        .sort(new BasicDBObject("O_ENTRY_D", -1))
+        Document lastOrder = Connector.order.find(and(o_w_id.eq(c_wid), o_d_id.eq(c_did), o_c_id.eq(cid)))
+        .sort(new BasicDBObject("O_ENTRY_D", -1)) //index created!
         .limit(1)
         .first();
         if (lastOrder == null){
             throw new InvalidKeyException("No Order with valid timestamp found");
         }
-        int oid =  lastOrder.getInteger("O_ID");
-        System.out.println("O_ID: " +oid);
-        System.out.println("O_ENTRY_D: " + lastOrder.getString("O_ENTRY_D")); //TODO: Type Date
-        System.out.println("O_CARRIER_ID: " + lastOrder.getInteger("O_CARRIER_ID"));
+        int oid = o_id.from(lastOrder);
+        System.out.println("O_ID: " +oid); 
+        System.out.println("O_ENTRY_D: " + o_entry_d.from(lastOrder));
+        System.out.println("O_CARRIER_ID: " + o_carrier_id.from(lastOrder));
 
         //Step 3
-        Iterator<Document> ol_it = Connector.orderLine.find(new BasicDBObject()
-        .append("OL_W_ID", c_wid)
-        .append("OL_D_ID", c_did)
-        .append("OL_O_ID", oid))
-        .iterator();
+        Iterator<Document> ol_it = Connector.orderLine.find(
+            and(ol_w_id.eq(c_wid), ol_d_id.eq(c_did), ol_o_id.eq(oid)))
+            .iterator();
 
         while(ol_it.hasNext()){
             Document curr = ol_it.next();
-            System.out.println("OL_I_ID: " + curr.getInteger("OL_I_ID"));
-            System.out.println("OL_SUPPLY_W_ID: " + curr.getInteger("OL_SUPPLY_W_ID"));
-            System.out.println("OL_QUANTITY:"  + curr.getInteger("OL_QUANTITY"));
-            System.out.println("OL_AMOUNT:"  + curr.getDouble("OL_AMOUNT"));
-            System.out.println("OL_DELIVERY_D:"  + curr.getString("OL_DELIVERY_D")); //TODO date
+            System.out.println("OL_I_ID: " + ol_i_id.from(curr));
+            System.out.println("OL_SUPPLY_W_ID: " + ol_supply_w_id.from(curr));
+            System.out.println("OL_QUANTITY:"  + ol_quantity.from(curr));
+            System.out.println("OL_AMOUNT:"  + ol_amount.from(curr));
+            System.out.println("OL_DELIVERY_D:"  + o_entry_d.from(curr));
         } 
     }
 

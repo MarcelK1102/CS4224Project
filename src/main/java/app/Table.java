@@ -55,6 +55,14 @@ public class Table{
 		public Bson inc(Number n){
 			return Updates.inc(s, n);
 		}
+
+		public Bson set(Integer n){
+			return Updates.set(s, n);
+		}
+
+		public Bson set(Date n){
+			return Updates.set(s, n);
+		}
 	}
 	public static final Entry<Integer> w_id = new Entry<>("W_ID",Integer.class, parseInteger);
 	public static final Entry<String> w_zip = new Entry<>("W_ZIP",String.class, parseString);
