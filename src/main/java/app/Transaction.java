@@ -231,7 +231,7 @@ public class Transaction {
             System.out.println("OL_SUPPLY_W_ID: " + ol_supply_w_id.from(curr));
             System.out.println("OL_QUANTITY:"  + ol_quantity.from(curr));
             System.out.println("OL_AMOUNT:"  + ol_amount.from(curr));
-            System.out.println("OL_DELIVERY_D:"  + o_entry_d.from(curr));
+            System.out.println("OL_DELIVERY_D:"  + ol_delivery_d.from(curr));
         } 
     }
 
