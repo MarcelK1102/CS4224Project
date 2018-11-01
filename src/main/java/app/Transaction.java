@@ -247,18 +247,8 @@ public class Transaction {
     public static void popularItem(int wid, int did, int L) {
         //P Step 1
         MongoCollection<Document> districts = Connector.district;
-<<<<<<< HEAD
         Document district = districts.find(and(d_w_id.eq(wid),d_id.eq(did))).first();        
         Integer N = d_next_o_id.from(district);
-=======
-        Document district = districts.find(
-            new BasicDBObject()
-            .append("D_W_ID",wid)
-            .append("D_ID", did)
-        ).first();        
-        //falscher datentyp
-        Integer N = (int) (0 + d_next_o_id.from(district));
->>>>>>> 2d8e3d181e01e57cc1599c97aa5f6acb2740f81f
         //P Step 2
         FindIterable<Document> S =  Connector.order.find(and(o_w_id.eq(wid),o_d_id.eq(did),o_id.gte(N-L),o_id.lt(N)));
             
@@ -272,9 +262,7 @@ public class Transaction {
 
         HashMap<Pair,Integer> popItemQuantity = new HashMap<>();//itemID -> Quantity
 
-        MongoCollection<Document> orderLine = Connector.orderLine;
-        BasicDBObject query = new BasicDBObject().append("OL_D_ID",did).append("OL_W_ID",wid);
-       
+        MongoCollection<Document> orderLine = Connector.orderLine;       
 
         FindIterable<Document> tmp = orderLine.find(and(ol_d_id.eq(did),ol_w_id.eq(wid)));
         while(it.hasNext()){
@@ -284,15 +272,17 @@ public class Transaction {
             if(tmp2==null||tmp2.first()==null)
                 continue;
             Integer max = ol_quantity.from(tmp2.sort(new BasicDBObject("OL_QUANTITY",-1)).first());            
-            FindIterable<Document> Items =  tmp.filter(and(ol_d_id.eq(did),ol_w_id.eq(wid),ol_quantity.eq(max),ol_o_id.eq(O_ID)));
+            FindIterable<Document> Items =  tmp.filter(and(ol_d_id.eq(did),ol_w_id.eq(wid),ol_o_id.eq(O_ID)));
             Iterator<Document> it2 = Items.iterator();
             HashSet<Integer> items = new HashSet<>();
             HashSet<Integer> popItems = new HashSet<>();
             while(it2.hasNext()){
                 Document Item = it2.next();
                 items.add(ol_i_id.from(Item));
-                popItemQuantity.put(new Pair(O_ID,ol_i_id.from(Item)),ol_quantity.from(Item));
-                popItems.add(ol_i_id.from(Item));
+                if(ol_quantity.from(Item)==max){
+                    popItemQuantity.put(new Pair(O_ID,ol_i_id.from(Item)),ol_quantity.from(Item));
+                    popItems.add(ol_i_id.from(Item));
+                }
             }
             allItems.put(O_ID,items);
             popularItems.put(O_ID,popItems);
@@ -315,11 +305,11 @@ public class Transaction {
                 int counter = 0;
                 for(Integer t : orders){
                     if(allItems.get(t)==null)
-                    continue;
+                        continue;
                     if(allItems.get(t).contains(i))
-                    counter++;
+                        counter++;
                 }
-                System.out.println(100*(float)counter / (float)orders.size());
+                System.out.println("Percentage: " + 100*(float)counter / (float)orders.size());
 
             }
 

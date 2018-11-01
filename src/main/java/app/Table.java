@@ -55,17 +55,12 @@ public class Table{
 		public Bson gt(T value){
 			return Filters.gt(s, value);
 		}
-<<<<<<< HEAD
 		public Bson gte(T value){
 			return Filters.gte(s, value);
 		}
 		public Bson lte(T value){
 			return Filters.lte(s, value);
 		}
-=======
-
-
->>>>>>> 2d8e3d181e01e57cc1599c97aa5f6acb2740f81f
 		public Bson inc(Number n){
 			return Updates.inc(s, n);
 		}
