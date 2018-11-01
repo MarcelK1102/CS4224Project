@@ -51,7 +51,12 @@ public class Table{
 		public Bson gt(T value){
 			return Filters.gt(s, value);
 		}
-
+		public Bson gte(T value){
+			return Filters.gte(s, value);
+		}
+		public Bson lte(T value){
+			return Filters.lte(s, value);
+		}
 		public Bson inc(Number n){
 			return Updates.inc(s, n);
 		}
@@ -129,7 +134,7 @@ public class Table{
 	public static final Entry<Integer> s_i_id = new Entry<>("S_I_ID",Integer.class, parseInteger);
 	public static final Entry<Integer> ol_o_id = new Entry<>("OL_O_ID",Integer.class, parseInteger);
 	public static final Entry<Integer> ol_w_id = new Entry<>("OL_W_ID",Integer.class, parseInteger);
-	public static final Entry<Double> ol_quantity = new Entry<>("OL_QUANTITY",Double.class, parseDouble);
+	public static final Entry<Integer> ol_quantity = new Entry<>("OL_QUANTITY",Integer.class, parseInteger);
 	public static final Entry<Integer> ol_number = new Entry<>("OL_NUMBER",Integer.class, parseInteger);
 	public static final Entry<Integer> ol_d_id = new Entry<>("OL_D_ID",Integer.class, parseInteger);
 	public static final Entry<Double> ol_amount = new Entry<>("OL_AMOUNT",Double.class, parseDouble);
