@@ -175,8 +175,7 @@ public class Transaction {
 
             while(orders_curr_it.hasNext()){
                 Document curr = orders_curr_it.next();
-                System.out.println(curr.getInteger("O_CARRIER_ID"));
-                if (curr.getInteger("O_CARRIER_ID")==0){
+                if (curr.get("O_CARRIER_ID").toString() == "null"){ //"null" object
                     oids.add(curr.getInteger("O_ID"));
                 }
             }
@@ -189,7 +188,14 @@ public class Transaction {
             /*int N = o_id.from(order);
             */
             //int cid = o_c_id.from(order);
-            int cid = 1;
+            Document X;
+            try {
+                X = orders_curr.filter(o_id.eq(N)).first();
+            } catch (NullPointerException e) {
+                //skip if there is no order with id N
+                continue;
+            }
+            int cid = o_c_id.from(X);
 
             //b
             Connector.order.updateOne(orders_curr.filter(o_id.eq(N)).first(), o_carrier_id.set(carrierid));
