@@ -10,6 +10,7 @@ import java.util.Date;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
 
+import org.bson.BsonType;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
@@ -55,11 +56,25 @@ public class Table{
 		public Bson gt(T value){
 			return Filters.gt(s, value);
 		}
-
-
+		public Bson gte(T value){
+			return Filters.gte(s, value);
+		}
+		public Bson lte(T value){
+			return Filters.lte(s, value);
+		}
 		public Bson inc(Number n){
 			return Updates.inc(s, n);
 		}
+
+		public Bson set(T n){
+			return Updates.set(s, n);
+		}
+
+		public Bson type(BsonType t){
+			return Filters.type(s, t);
+		}
+
+
 	}
 	public static final Entry<Integer> w_id = new Entry<>("W_ID",Integer.class, parseInteger);
 	public static final Entry<String> w_zip = new Entry<>("W_ZIP",String.class, parseString);

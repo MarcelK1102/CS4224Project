@@ -11,12 +11,13 @@ public class App {
 
     public static void main(String args[]) {
         //Disable logging:
-        // ((LoggerContext) LoggerFactory.getILoggerFactory()).getLogger("org.mongodb.driver").setLevel(Level.OFF  );
+        ((LoggerContext) LoggerFactory.getILoggerFactory()).getLogger("org.mongodb.driver").setLevel(Level.OFF  );
 
         Connector.connect();
         System.out.println("connected");
-        Client.handleInput(Integer.parseInt(args[0]));
-        Client.printStats();
+        //Client.handleInput(Integer.parseInt(args[0]));
+        Transaction.processDelivery(1, 77);
+        //Client.printStats();
         Connector.close();
     }
 
