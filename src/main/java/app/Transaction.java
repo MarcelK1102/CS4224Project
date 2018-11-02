@@ -13,6 +13,7 @@ import java.math.BigDecimal;
 import java.security.InvalidKeyException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -159,16 +160,36 @@ public class Transaction {
             FindIterable<Document> orders_curr = Connector.order.find(and(o_w_id.eq(wid), o_d_id.eq(did)));
 
             //type null finds nothing, type String finds everything
-            Document order = orders_curr.filter(o_carrier_id.eq(-1)) //o_carrier_id.type(BsonType.NULL)
+            //BasicDBObject carrierNotInt = new BasicDBObject("$not",o_carrier_id.type(BsonType.INT32));
+            /*Document order = orders_curr.filter(new BasicDBObject(carrierNotInt)) //o_carrier_id.type(BsonType.NULL)
             .sort(new BasicDBObject("O_ID", 1))
             .limit(1)
             .first();
 
             if (order == null){
                 continue;
+            }*/
+
+            ArrayList<Integer> oids = new ArrayList<>();
+            Iterator<Document> orders_curr_it = Connector.order.find(and(o_w_id.eq(wid), o_d_id.eq(did))).iterator();
+
+            while(orders_curr_it.hasNext()){
+                Document curr = orders_curr_it.next();
+                System.out.println(curr.getInteger("O_CARRIER_ID"));
+                if (curr.getInteger("O_CARRIER_ID")==0){
+                    oids.add(curr.getInteger("O_ID"));
+                }
             }
-            int N = o_id.from(order);
-            int cid = o_c_id.from(order);
+            int N;
+            if (!oids.isEmpty())
+                N = Collections.min(oids);
+            else
+                continue;
+
+            /*int N = o_id.from(order);
+            */
+            //int cid = o_c_id.from(order);
+            int cid = 1;
 
             //b
             Connector.order.updateOne(orders_curr.filter(o_id.eq(N)).first(), o_carrier_id.set(carrierid));

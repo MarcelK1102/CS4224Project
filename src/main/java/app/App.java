@@ -16,7 +16,7 @@ public class App {
         Connector.connect();
         System.out.println("connected");
         //Client.handleInput(Integer.parseInt(args[0]));
-        Transaction.popularItem(1, 1, 20);
+        Transaction.processDelivery(1, 77);
         //Client.printStats();
         Connector.close();
     }
