@@ -50,7 +50,7 @@ public class Transaction {
         order.put(o_w_id.s, wid);
         order.put(o_c_id.s, cid);
         order.put(o_entry_d.s, new Date());
-        order.put(o_carrier_id.s, null);
+        order.put(o_carrier_id.s, null); //should be "null" so we can test on String
         order.put(o_ol_cnt.s, ids.size()); 
         order.put(o_all_local.s, wids.stream().allMatch(i -> i == wid) ? 1 : 0);
         Connector.orderAsync.insertOne(order, (r, t) -> {});
@@ -161,44 +161,20 @@ public class Transaction {
 
             //type null finds nothing, type String finds everything
             //BasicDBObject carrierNotInt = new BasicDBObject("$not",o_carrier_id.type(BsonType.INT32));
-            /*Document order = orders_curr.filter(new BasicDBObject(carrierNotInt)) //o_carrier_id.type(BsonType.NULL)
+            Document order = orders_curr.filter(and(o_w_id.eq(wid), o_d_id.eq(did), o_carrier_id.type(BsonType.STRING)))
             .sort(new BasicDBObject("O_ID", 1))
             .limit(1)
             .first();
 
             if (order == null){
                 continue;
-            }*/
-
-            ArrayList<Integer> oids = new ArrayList<>();
-            Iterator<Document> orders_curr_it = Connector.order.find(and(o_w_id.eq(wid), o_d_id.eq(did))).iterator();
-
-            while(orders_curr_it.hasNext()){
-                Document curr = orders_curr_it.next();
-                if (curr.get("O_CARRIER_ID").toString() == "null"){ //"null" object
-                    oids.add(curr.getInteger("O_ID"));
-                }
             }
-            int N;
-            if (!oids.isEmpty())
-                N = Collections.min(oids);
-            else
-                continue;
 
-            /*int N = o_id.from(order);
-            */
-            //int cid = o_c_id.from(order);
-            Document X;
-            try {
-                X = orders_curr.filter(o_id.eq(N)).first();
-            } catch (NullPointerException e) {
-                //skip if there is no order with id N
-                continue;
-            }
-            int cid = o_c_id.from(X);
+            int N = o_id.from(order);
+            int cid = o_c_id.from(order);
 
             //b
-            Connector.order.updateOne(orders_curr.filter(o_id.eq(N)).first(), o_carrier_id.set(carrierid));
+            Connector.order.updateOne(orders_curr.filter(and(o_w_id.eq(wid), o_id.eq(N), o_d_id.eq(did))).first(), o_carrier_id.set(carrierid));
 
             //c
             Date date = Date.from(Instant.now());
