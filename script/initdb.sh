@@ -1,4 +1,6 @@
 use warehouse
+db.order.find().forEach(function(x) { db.order_line.find({OL_W_ID:x.O_W_ID, OL_D_ID:x.O_D_ID, OL_O_ID:x.O_ID}).forEach(function(ol) { db.order.update({_id:ol._id}, {$push:{lines:{OL_I_ID:ol.OL_I_ID, OL_DELIVERY_D:ol.DELIVERY_D, OL_AMOUNT:ol.OL_AMOUNT, OL_SUPPLY_W_ID:ol.OL_SUPPLY_W_ID, OL_QUANTITY:ol.OL_QUANTITY, OL_DIST_INFO:ol.OL_DIST_INFO}}})})})
+
 db.createCollection("warehouse", {
    validator: {
       $jsonSchema: {
@@ -18,7 +20,7 @@ db.createCollection("warehouse", {
 				bsonType: "string"
 			} ,
     		W_CITY : {
-				bsonType: "string"
+		 		bsonType: "string"
 			} ,
     		W_STATE : {
 				bsonType: "string"
