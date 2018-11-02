@@ -4,6 +4,8 @@ import static app.Table.*;
 import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Updates.combine;
 import static com.mongodb.client.model.Projections.*;
+
+import org.bson.BsonType;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
@@ -151,12 +153,13 @@ public class Transaction {
      }
 
     //Transaction 3
-    public static void processDelivery(int wid, int carrierid) {
+    public static void processDelivery(int wid, Integer carrierid) {
         for (int did = 1; did <= 10; did++){
 
             FindIterable<Document> orders_curr = Connector.order.find(and(o_w_id.eq(wid), o_d_id.eq(did)));
 
-            Document order = orders_curr.filter(new BasicDBObject("O_CARRIER_ID", "null"))
+            //type null finds nothing, type String finds everything
+            Document order = orders_curr.filter(o_carrier_id.eq(-1)) //o_carrier_id.type(BsonType.NULL)
             .sort(new BasicDBObject("O_ID", 1))
             .limit(1)
             .first();
@@ -168,15 +171,13 @@ public class Transaction {
             int cid = o_c_id.from(order);
 
             //b
-            Connector.order.updateOne(orders_curr.filter(o_id.eq(N)).first(), 
-            new Document("$set", new Document().append("O_CARRIER_ID", carrierid)));
+            Connector.order.updateOne(orders_curr.filter(o_id.eq(N)).first(), o_carrier_id.set(carrierid));
 
             //c
-            String date = Date.from(Instant.now()).toString();
+            Date date = Date.from(Instant.now());
 
             Bson ol_query = and(ol_w_id.eq(wid), ol_d_id.eq(did), ol_o_id.eq(N));
-            Connector.orderLine.updateMany(ol_query,
-            new Document("$set", new Document("OL_DELIVERY_D", date))); 
+            Connector.orderLine.updateMany(ol_query, ol_delivery_d.set(date));
             //d
             Iterator<Document> toAdd = Connector.orderLine.find(ol_query).iterator();
 
