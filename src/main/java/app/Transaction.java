@@ -2,18 +2,13 @@ package app;
 
 import static app.Table.*;
 import static com.mongodb.client.model.Filters.and;
+import static com.mongodb.client.model.Projections.include;
 import static com.mongodb.client.model.Updates.combine;
-import static com.mongodb.client.model.Projections.*;
-
-import org.bson.BsonType;
-import org.bson.Document;
-import org.bson.conversions.Bson;
 
 import java.math.BigDecimal;
 import java.security.InvalidKeyException;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,6 +21,10 @@ import com.mongodb.Block;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Sorts;
+
+import org.bson.BsonType;
+import org.bson.Document;
+import org.bson.conversions.Bson;
 
 public class Transaction {
     static Block<Document> printBlock = new Block<Document>() {
@@ -44,15 +43,15 @@ public class Transaction {
         Document district = Connector.district.findOneAndUpdate(and(d_w_id.eq(wid), d_id.eq(did)), d_next_o_id.inc(1));
         int N = d_next_o_id.from(district).intValue();
         //Processing 3
-        Document order = new Document();
-        order.put(o_id.s, N);
-        order.put(o_d_id.s, did);
-        order.put(o_w_id.s, wid);
-        order.put(o_c_id.s, cid);
-        order.put(o_entry_d.s, new Date());
-        order.put(o_carrier_id.s, null); //should be "null" so we can test on String
-        order.put(o_ol_cnt.s, ids.size()); 
-        order.put(o_all_local.s, wids.stream().allMatch(i -> i == wid) ? 1 : 0);
+        Document order = new Document()
+            .append(o_id.s, N)
+            .append(o_d_id.s, did)
+            .append(o_w_id.s, wid)
+            .append(o_c_id.s, cid)
+            .append(o_entry_d.s, new Date())
+            .append(o_carrier_id.s, null) //should be "null" so we can test on String
+            .append(o_ol_cnt.s, ids.size()) 
+            .append(o_all_local.s, wids.stream().allMatch(i -> i == wid) ? 1 : 0);
         Connector.orderAsync.insertOne(order, (r, t) -> {});
         
         //Output 1
@@ -94,17 +93,17 @@ public class Transaction {
             //Processing f
             totalAmount += itemAmount;
 
-            Document orderLine = new Document();
-            orderLine.put(ol_o_id.s, N);
-            orderLine.put(ol_d_id.s, did);
-            orderLine.put(ol_w_id.s, wid);
-            orderLine.put(ol_number.s, i);
-            orderLine.put(ol_i_id.s, ids.get(i));
-            orderLine.put(ol_supply_w_id.s, wids.get(i));
-            orderLine.put(ol_quantity.s, quantities.get(i));
-            orderLine.put(ol_amount.s, itemAmount);
-            orderLine.put(ol_delivery_d.s, null);
-            orderLine.put(ol_dist_info.s, "S_DIST_" + String.format("%02d", did));
+            Document orderLine = new Document()
+                .append(ol_o_id.s, N)
+                .append(ol_d_id.s, did)
+                .append(ol_w_id.s, wid)
+                .append(ol_number.s, i)
+                .append(ol_i_id.s, ids.get(i))
+                .append(ol_supply_w_id.s, wids.get(i))
+                .append(ol_quantity.s, quantities.get(i))
+                .append(ol_amount.s, itemAmount)
+                .append(ol_delivery_d.s, null)
+                .append(ol_dist_info.s, "S_DIST_" + String.format("%02d", did));
             orderLines.add(orderLine);
             //Output 5
             Document suboutput = new Document();
@@ -133,22 +132,20 @@ public class Transaction {
     //Transaction 2
     public static void paymentTransaction(int cwid, int cdid, int cid, BigDecimal payment2) {
         Integer payment = payment2.intValue();
-        Document C = Connector.customer.find(and(c_id.eq(cid),c_d_id.eq(cdid),c_w_id.eq(cwid))).first();
-        Document D = Connector.district.find(and(d_id.eq(cdid),d_w_id.eq(cwid))).first();
-        Document W = Connector.warehouse.find(w_id.eq(cwid)).first();
-        Connector.warehouse.updateOne(W,w_ytd.inc(payment));
-        Connector.district.updateOne(D,d_ytd.inc(payment));
-        Connector.customer.updateOne(C,and(c_ytd_payment.inc(payment),c_balance.inc(-payment),c_payment_cnt.inc(1)));   
+        Document C = Connector.customer.findOneAndUpdate(and(c_id.eq(cid),c_d_id.eq(cdid),c_w_id.eq(cwid)), 
+                                                         combine(c_ytd_payment.inc(payment),c_balance.inc(-payment),c_payment_cnt.inc(1)));
+        Document D = Connector.district.findOneAndUpdate(and(d_id.eq(cdid),d_w_id.eq(cwid)), w_ytd.inc(payment));
+        Document W = Connector.warehouse.findOneAndUpdate(w_id.eq(cwid), d_ytd.inc(payment));  
         System.out.println("C_W_ID: " + cwid + " C_D_ID: " + cdid + " C_ID: " + cid );
-        System.out.println("Name: " + C.get("C_FIRST") +" " + C.get("C_MIDDLE") + " "+ C.get("C_LAST"));
-        System.out.println("Adress: " + C.get("C_STREET_1") +" "+ C.get("C_STREET_2") + " "+ C.get("C_CITY") + " " +
-                                        C.get("C_STATE") +" " + C.get("C_ZIP") );
-        System.out.println("Phone: " + C.get("C_PHONE"));
-        System.out.println("Since: " + C.get("C_SINCE"));
-        System.out.println("Credit Information: "+ C.get("C_CREDIT") + " Limit: " + C.get("C_CREDIT_LIM") + " Discount: " + C.get("C_DISCOUNT") + " Balance: " + C.get("C_BALANCE") );
+        System.out.println("Name: " + c_first.from(C) +" " + c_middle.from(C) + " "+ c_last.from(C));
+        System.out.println("Adress: " + c_street_1.from(C) +" "+ c_street_2.from(C) + " "+ c_city.from(C) + " " +
+                                        c_state.from(C) +" " + c_zip.from(C) );
+        System.out.println("Phone: " + c_phone.from(C));
+        System.out.println("Since: " + c_since.from(C));
+        System.out.println("Credit Information: "+ c_credit.from(C) + " Limit: " + c_credit_lim.from(C) + " Discount: " + c_discount.from(C) + " Balance: " + (c_balance.from(C) - payment) );
         
-        System.out.println("Warehouse: " + W.get("W_STREET_1") + " " + W.get("W_STREET_2") +" " + W.get("W_CITY") +" "+ W.get("W_STATE") +" "+ W.get("W_ZIP"));
-        System.out.println("District: " + D.get("D_STREET_1") + " "+ D.get("D_STREET_2") +" "+ D.get("D_CITY") +" "+ D.get("D_STATE") +" "+ D.get("D_ZIP"));
+        System.out.println("Warehouse: " + w_street_1.from(W) + " " + w_street_2.from(W) +" " + w_city.from(W) +" "+ w_state.from(W) +" "+ w_zip.from(W));
+        System.out.println("District: " + d_street_1.from(D) + " "+ d_street_2.from(D) +" "+ d_city.from(D) +" "+ d_state.from(D) +" "+ d_zip.from(D));
         System.out.println("Payment: " + payment);
 
      }
@@ -234,7 +231,7 @@ public class Transaction {
     public static void stockLevel(int wid, int did, long T, int L) {
         //Processing 1
         Document district = Connector.district.find(and(d_w_id.eq(wid), d_id.eq(did))).first();
-        int N = d_next_o_id.from(district).intValue();
+        int N = d_next_o_id.from(district);
         //Processing 2
         FindIterable<Document> S = Connector.orderLine.find(and(ol_d_id.eq(did), ol_w_id.eq(wid), ol_o_id.gt(N-L))).projection(include(ol_i_id.s));
         //Processing 3
@@ -323,69 +320,69 @@ public class Transaction {
     //Transaction 7
     public static void topBalance(){
         final Document output = new Document();
-        Connector.customer.find().sort(Sorts.descending(c_balance.s)).limit(10).forEach(new Block<Document>() {
-            @Override
-            public void apply(final Document customer) {
-                Document warehouse = Connector.warehouse.find(w_id.eq(c_w_id.from(customer))).first(); 
-                Document district = Connector.district.find(and(d_w_id.eq(c_w_id.from(customer)), d_id.eq(c_d_id.from(customer)))).first(); 
-                Document suboutput = new Document();
-                suboutput.put(c_first.s, c_first.from(customer));
-                suboutput.put(c_middle.s, c_middle.from(customer));
-                suboutput.put(c_last.s, c_last.from(customer));
-                suboutput.put(c_balance.s, c_balance.from(customer));
-                suboutput.put(w_name.s, w_name.from(warehouse));
-                suboutput.put(d_name.s, d_name.from(district));
-                output.put(c_w_id.from(customer).toString(), suboutput);
-            }
-        });
+        Iterator<Document> customers = Connector.customer.find().sort(Sorts.descending(c_balance.s)).limit(10).iterator();
+        int i = 0;
+        while(customers.hasNext()){
+            Document customer = customers.next();
+            Document warehouse = Connector.warehouse.find(w_id.eq(c_w_id.from(customer))).first(); 
+            Document district = Connector.district.find(and(d_w_id.eq(c_w_id.from(customer)), d_id.eq(c_d_id.from(customer)))).first(); 
+            Document suboutput = new Document();
+            suboutput.put(c_first.s, c_first.from(customer));
+            suboutput.put(c_middle.s, c_middle.from(customer));
+            suboutput.put(c_last.s, c_last.from(customer));
+            suboutput.put(c_balance.s, c_balance.from(customer));
+            suboutput.put(w_name.s, w_name.from(warehouse));
+            suboutput.put(d_name.s, d_name.from(district));
+            output.put("" + i++, suboutput);
+        }
         System.out.println(output.toJson());
     }
     
     //Transaction 8
     public static void relatedCustomer(int cwid, int cdid, int cid) {
         
-    //Find all tuples in orders for this customer
-    System.out.println("C_W_ID: " + cwid + " C_D_ID: " + cdid + " C_ID: "+ cid);
+        //Find all tuples in orders for this customer
+        System.out.println("C_W_ID: " + cwid + " C_D_ID: " + cdid + " C_ID: "+ cid);
 
-    Iterator<Document> orders = Connector.order.find(and(o_c_id.eq(cid),o_w_id.eq(cwid),o_d_id.eq(cdid))).iterator();
+        Iterator<Document> orders = Connector.order.find(and(o_c_id.eq(cid),o_w_id.eq(cwid),o_d_id.eq(cdid))).iterator();
 
-    while(orders.hasNext()){
-        Document order = orders.next();
-        //Find all items for that order
-        Iterator<Document> items = Connector.orderLine.find(and(ol_w_id.eq(cwid),ol_d_id.eq(cdid),ol_o_id.eq(o_id.from(order)))).iterator();
-        
-        Map<Integer, Pair> oids = new HashMap<>();
-        while(items.hasNext()){
-            Document item = items.next();
-            int itemId = ol_i_id.from(item);
-            // System.out.println(item);
-            //for this item we need to find OL_O_ID that has the same item
-            List<Iterator<Document>> otherorders = new ArrayList<Iterator<Document>>();
+        while(orders.hasNext()){
+            Document order = orders.next();
+            //Find all items for that order
+            Iterator<Document> items = Connector.orderLine.find(and(ol_w_id.eq(cwid),ol_d_id.eq(cdid),ol_o_id.eq(o_id.from(order)))).iterator();
+            
+            Map<Integer, Pair> oids = new HashMap<>();
+            while(items.hasNext()){
+                Document item = items.next();
+                int itemId = ol_i_id.from(item);
+                // System.out.println(item);
+                //for this item we need to find OL_O_ID that has the same item
+                List<Iterator<Document>> otherorders = new ArrayList<Iterator<Document>>();
 
-            otherorders.add(
-                Connector.orderLine.find(and(ol_d_id.eq(cdid),ol_i_id.eq(ol_i_id.from(item)),ol_w_id.lt(cwid))).iterator()
-            );
+                otherorders.add(
+                    Connector.orderLine.find(and(ol_d_id.eq(cdid),ol_i_id.eq(ol_i_id.from(item)),ol_w_id.lt(cwid))).iterator()
+                );
 
-            otherorders.add(
-                Connector.orderLine.find(and(ol_d_id.eq(cdid),ol_i_id.eq(ol_i_id.from(item)),ol_w_id.gt(cwid))).iterator()
-            );
+                otherorders.add(
+                    Connector.orderLine.find(and(ol_d_id.eq(cdid),ol_i_id.eq(ol_i_id.from(item)),ol_w_id.gt(cwid))).iterator()
+                );
 
-            for(Iterator<Document> otherorder : otherorders){
-                while(otherorder.hasNext()){
-                    Document orderO = otherorder.next();
-                    Integer oloid = ol_o_id.from(orderO);
-                    if(!oids.containsKey(oloid))
-                        oids.put(oloid, new Pair(itemId, -1));
-                    else {
-                        Pair p = oids.get(oloid);
-                        if(p.a != itemId && p.b < 0){
-                            p.b = itemId;
-                            System.out.println("C_ID: " + o_c_id.from(Connector.order.find(and(o_w_id.eq(ol_w_id.from(orderO)),ol_d_id.eq(ol_d_id.from(orderO)),o_id.eq(oloid))).first()));
+                for(Iterator<Document> otherorder : otherorders){
+                    while(otherorder.hasNext()){
+                        Document orderO = otherorder.next();
+                        Integer oloid = ol_o_id.from(orderO);
+                        if(!oids.containsKey(oloid))
+                            oids.put(oloid, new Pair(itemId, -1));
+                        else {
+                            Pair p = oids.get(oloid);
+                            if(p.a != itemId && p.b < 0){
+                                p.b = itemId;
+                                System.out.println("C_ID: " + o_c_id.from(Connector.order.find(and(o_w_id.eq(ol_w_id.from(orderO)),ol_d_id.eq(ol_d_id.from(orderO)),o_id.eq(oloid))).first()));
+                            }
                         }
                     }
                 }
             }
         }
     }
-}
 }

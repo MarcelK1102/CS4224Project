@@ -15,9 +15,8 @@ public class App {
 
         Connector.connect();
         System.out.println("connected");
-        //Client.handleInput(Integer.parseInt(args[0]));
-        Transaction.processDelivery(1, 77);
-        //Client.printStats();
+        Client.handleInput(Integer.parseInt(args[0]));
+        Client.printStats();
         Connector.close();
     }
 
