@@ -180,7 +180,6 @@ public class Transaction {
     //Transaction 3
     public static void processDelivery(int wid, Integer carrierid) {
         for (int did = 1; did <= 10; did++){
-            System.out.println(did);
 
             FindIterable<Document> orders_curr = Connector.order.find(and(o_w_id.eq(wid), o_d_id.eq(did)));
 
