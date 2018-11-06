@@ -74,4 +74,4 @@ sh.enableSharding('warehouse')
 ssh $CLUSTER_NAME@${SHARDS[0]} "wget https://www.comp.nus.edu.sg/~cs4224/4224-project-files.zip;unzip 4224-project-files.zip;sed -i -e 's/,null,/,,/g' 4224-project-files/data-files/*.csv"
 
 ssh $CLUSTER_NAME@${SHARDS[0]} "bash -s" < ./import.sh ${SHARDS[0]} 
-ssh $CLUSTER_NAME@${SHARDS[0]} "bash -s" < ./dbinit.sh ${SHARDS[0]} 
+ssh $CLUSTER_NAME@${SHARDS[0]} "bash -s" < ./dbsetup.sh ${SHARDS[0]} 

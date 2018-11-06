@@ -1,5 +1,5 @@
 #!/bin/bash
-JAR=../app.jar #path to jar
+JAR=../build/libs/cs4224-project-all.jar #path to jar
 MASTER=192.168.48.249
 SEEDS=${MASTER},192.168.48.250,192.168.48.251,192.168.48.252,192.168.48.253 #ip of all nodes
 CLUSTER_NAME=cs4224g
@@ -7,7 +7,7 @@ XACT=4224-project-files/xact-files
 CONSISTENCY=$2
 NC=$1
 
-# scp $JAR $CLUSTER_NAME@$MASTER:~/app.jar
+scp $JAR $CLUSTER_NAME@$MASTER:~/app.jar
 
 IFS=', ' read -r -a array <<< $SEEDS
 for i in $(seq 1 $NC); do
@@ -21,15 +21,109 @@ for i in $(seq 1 $NC); do
 	ssh $CLUSTER_NAME@$MASTER "cat ~/$i.out | grep '#!#!STATS:''"
 done
 #4a
-cqlsh $MASTER --request-timeout=3600 -e "select sum(W_YTD) from warehouse.warehouse_cnts" >> database.out &
-#4b
-cqlsh $MASTER --request-timeout=3600 -e "select sum(D_YTD), sum(D_NEXT_O_ID) from warehouse.district_cnts" >> database.out &
-#4c
-cqlsh $MASTER --request-timeout=3600 -e "select sum(C_BALANCE), sum(C_YTD_PAYMENT), sum(C_PAYMENT_CNT), sum(C_DELIVERY_CNT) from warehouse.customer_cnts" >> database.out &
-#4d
-cqlsh $MASTER --request-timeout=3600 -e "select max(O_ID), sum(O_OL_CNT) from warehouse.orders" >> database.out &
-#4e
-cqlsh $MASTER --request-timeout=3600 -e "select sum(OL_AMOUNT), sum(OL_QUANTITY) from warehouse.order_line" >> database.out &
-#4f
-cqlsh $MASTER --request-timeout=3600 -e "select sum(S_QUANTITY), sum(S_YTD), sum(S_ORDER_CNT) from warehouse.stock_cnts" >> database.out &
+echo 'db.warehouse.aggregate([ { 
+    $group: { 
+        _id: null, 
+        sum: { 
+            $sum: "$W_YTD"
+        } 
+    } 
+} ] )
+db.district.aggregate([ { 
+    $group: { 
+        _id: null, 
+        sum: { 
+            $sum: "$D_YTD"
+        } 
+    } 
+} ] )
+db.district.aggregate([ { 
+    $group: { 
+        _id: null, 
+        sum: { 
+            $sum: "$D_NEXT_O_ID"
+        } 
+    } 
+} ] )
+db.customer.aggregate([ { 
+    $group: { 
+        _id: null, 
+        sum: { 
+            $sum: "$C_BALANCE"
+        } 
+    } 
+} ] )
+db.customer.aggregate([ { 
+    $group: { 
+        _id: null, 
+        sum: { 
+            $sum: "$C_YTD_PAYMENT"
+        } 
+    } 
+} ] )
+db.customer.aggregate([ { 
+    $group: { 
+        _id: null, 
+        sum: { 
+            $sum: "$C_PAYMENT_CNT"
+        } 
+    } 
+} ] )
+db.customer.aggregate([ { 
+    $group: { 
+        _id: null, 
+        sum: { 
+            $sum: "$C_DELIVERY_CNT"
+        } 
+    } 
+} ] )
+db.order.find().sort({O_ID:-1}).limit(1)
+db.order.aggregate([ { 
+    $group: { 
+        _id: null, 
+        sum: { 
+            $sum: "$O_OL_CNT"
+        } 
+    } 
+} ] )
+db.order_line.aggregate([ { 
+    $group: { 
+        _id: null, 
+        sum: { 
+            $sum: "$OL_AMOUNT"
+        } 
+    } 
+} ] )
+db.order_line.aggregate([ { 
+    $group: { 
+        _id: null, 
+        sum: { 
+            $sum: "$OL_QUANTITY"
+        } 
+    } 
+} ] )
+db.stock.aggregate([ { 
+    $group: { 
+        _id: null, 
+        sum: { 
+            $sum: "$S_QUANTITY"
+        } 
+    } 
+} ] )
+db.stock.aggregate([ { 
+    $group: { 
+        _id: null, 
+        sum: { 
+            $sum: "$S_YTD"
+        } 
+    } 
+} ] )
+db.stock.aggregate([ { 
+    $group: { 
+        _id: null, 
+        sum: { 
+            $sum: "$S_ORDER_CNT"
+        } 
+    } 
+} ] )' | mongo $MASTER >> database.out
 #end

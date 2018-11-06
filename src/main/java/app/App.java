@@ -1,6 +1,8 @@
 package app;
 
-import java.util.Arrays;
+
+import com.mongodb.ReadConcern;
+import com.mongodb.WriteConcern;
 
 import org.slf4j.LoggerFactory;
 
@@ -12,15 +14,28 @@ public class App {
     public static void main(String args[]) {
         //Disable logging:
         ((LoggerContext) LoggerFactory.getILoggerFactory()).getLogger("org.mongodb.driver").setLevel(Level.OFF  );
-
-        Connector.connect();
-        System.out.println("connected");
-        Client.handleInput(Integer.parseInt(args[0]));
+        ReadConcern rc; WriteConcern wc;
+        if(args.length <= 0){
+            System.out.println("this program take arg [concern]");
+            return;
+        }
+        if(args[0].equals("local")){
+            rc = ReadConcern.LOCAL;
+            wc = WriteConcern.W1;
+        } else if(args[0].equals("majority")) {
+            rc = ReadConcern.MAJORITY;
+            wc = WriteConcern.MAJORITY;
+        } else {
+            System.out.println("Concern has to be in either \"local\" or \"majority\"");
+            return;
+        }
+        Connector.connect(rc, wc);
+        Client.handleInput(args.length < 2 ? -1 : Integer.parseInt(args[1]));
         Client.printStats();
         Connector.close();
+        for(int i = 0; i < Transaction.newOrderTimes.length; i++){
+            System.out.println("Point " + i + " took " + (Transaction.newOrderTimes[i] / 1000.0) + " seconds");
+        }
     }
 
 }
-
-//todo
-//set up a mongodb shared cluster: https://docs.mongodb.com/manual/tutorial/deploy-shard-cluster/

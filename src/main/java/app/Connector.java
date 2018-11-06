@@ -1,5 +1,7 @@
 package app;
 
+import com.mongodb.ReadConcern;
+import com.mongodb.WriteConcern;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
@@ -37,9 +39,9 @@ public class Connector {
     private static MongoClient mongoclient;
     private static com.mongodb.async.client.MongoClient mongoClientAsync;
 
-    public static void connect(){
+    public static void connect(ReadConcern rc, WriteConcern wc){
         mongoclient = MongoClients.create(connectorString);
-        MongoDatabase db = mongoclient.getDatabase(database);
+        MongoDatabase db = mongoclient.getDatabase(database).withReadConcern(rc).withWriteConcern(wc);
         warehouse = db.getCollection("warehouse");
         district = db.getCollection("district");
         item = db.getCollection("item");
@@ -49,7 +51,7 @@ public class Connector {
         customer = db.getCollection("customer");
         
         mongoClientAsync = com.mongodb.async.client.MongoClients.create(connectorString);
-        com.mongodb.async.client.MongoDatabase dbAsync = mongoClientAsync.getDatabase(database);
+        com.mongodb.async.client.MongoDatabase dbAsync = mongoClientAsync.getDatabase(database).withReadConcern(rc).withWriteConcern(wc);;
         warehouseAsync = dbAsync.getCollection("warehouse");
         districtAsync = dbAsync.getCollection("district");
         itemAsync = dbAsync.getCollection("item");

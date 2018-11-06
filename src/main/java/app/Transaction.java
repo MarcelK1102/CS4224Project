@@ -34,13 +34,24 @@ public class Transaction {
         }
     };
 
+    static long newOrderTimes[] = new long[9];  
     //Transaction 1
     public static void newOrder(int wid, int did, int cid, List<Integer> ids, List<Integer> wids, List<Long> quantities ) {
         Document output = new Document();
+        
+        long start = System.currentTimeMillis();
         Document warehouse = Connector.warehouse.find(w_id.eq(wid)).first();
+        newOrderTimes[0] += System.currentTimeMillis() - start;
+        
+        start = System.currentTimeMillis();
         Document customer = Connector.customer.find(and(c_w_id.eq(wid), c_d_id.eq(did), c_id.eq(cid))).first();
+        newOrderTimes[1] += System.currentTimeMillis() - start;
         //Processing 1 and 2
+        start = System.currentTimeMillis();
         Document district = Connector.district.findOneAndUpdate(and(d_w_id.eq(wid), d_id.eq(did)), d_next_o_id.inc(1));
+        newOrderTimes[2] += System.currentTimeMillis() - start;
+        
+        start = System.currentTimeMillis();
         int N = d_next_o_id.from(district).intValue();
         //Processing 3
         Document order = new Document()
@@ -70,29 +81,45 @@ public class Transaction {
         double totalAmount = 0;
         //Processing 5
         List<Document> orderLines = new ArrayList<>();
+        newOrderTimes[3] += System.currentTimeMillis() - start;
+
         for(int i = 0; i < ids.size(); i++){
             //Processing d
-            Document stock = Connector.stock.findOneAndUpdate(
+            start = System.currentTimeMillis();
+            final int temp = i;
+            Connector.stockAsync.findOneAndUpdate(
                 and(s_w_id.eq(wid), s_i_id.eq(ids.get(i))), 
                 combine(
                     s_quantity.inc(-quantities.get(i)),
                     s_ytd.inc(quantities.get(i)),
                     s_order_cnt.inc(1),
-                    s_remote_cnt.inc(wids.get(i) != wid ? 1 : 0)
-            ));
+                    s_remote_cnt.inc(wids.get(i) != wid ? 1 : 0)),
+                    (s,t) -> {
+                        Long quantity = s_quantity.from(s) - quantities.get(temp);
+                        //Processing c
+                        if(quantity < 10){
+                            Connector.stockAsync.updateOne(and(s_w_id.eq(wid), s_i_id.eq(ids.get(temp))), s_quantity.inc(100), (s1,t1) -> {});
+                            quantity += 100;
+                        }
+                        //Output f
+                        System.out.println("S_QUANTITY : " + quantity);
+                    });
+            newOrderTimes[4] += System.currentTimeMillis() - start;
+
             //Processing a + b
-            Long quantity = s_quantity.from(stock) - quantities.get(i);
-            //Processing c
-            if(quantity < 10){
-                Connector.stock.updateOne(and(s_w_id.eq(wid), s_i_id.eq(ids.get(i))), s_quantity.inc(100));
-                quantity += 100;
-            }
+            start = System.currentTimeMillis();
+            
+            newOrderTimes[5] += System.currentTimeMillis() - start;
+
             //Processing e
+            start = System.currentTimeMillis();
             Document item = Connector.item.find(i_id.eq(ids.get(i))).first();
+            newOrderTimes[6] += System.currentTimeMillis() - start;
             double itemAmount = quantities.get(i) + i_price.from(item).doubleValue();
             //Processing f
             totalAmount += itemAmount;
 
+            start = System.currentTimeMillis();
             Document orderLine = new Document()
                 .append(ol_o_id.s, N)
                 .append(ol_d_id.s, did)
@@ -117,16 +144,17 @@ public class Transaction {
             suboutput.put("QUANTITY", quantities.get(i));
             //Output e
             suboutput.put(ol_amount.s, ol_amount.from(orderLine));
-            //Output f
-            suboutput.put(s_quantity.s, quantity);
             output.put(""+i, suboutput);
+            newOrderTimes[7] += System.currentTimeMillis() - start;
         }
+        start = System.currentTimeMillis();
         Connector.orderLineAsync.insertMany(orderLines, (r,t) -> {});
         totalAmount *= (1 + d_tax.from(district).doubleValue() + w_tax.from(warehouse).doubleValue()) * (1 - c_discount.from(customer).doubleValue());
         //output 4
         output.put("NUM_ITEMS", ids.size());
         output.put("TOTAL_AMOUNT", totalAmount);
         System.out.println(output.toJson());
+        newOrderTimes[8] += System.currentTimeMillis() - start;
     }
 
     //Transaction 2
