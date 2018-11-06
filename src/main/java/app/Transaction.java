@@ -62,7 +62,6 @@ public class Transaction {
             .append(o_w_id.s, wid)
             .append(o_c_id.s, cid)
             .append(o_entry_d.s, new Date())
-            .append(o_carrier_id.s, null) //should be "null" so we can test on String
             .append(o_ol_cnt.s, ids.size()) 
             .append(o_all_local.s, wids.stream().allMatch(i -> i == wid) ? 1 : 0);
         Connector.orderAsync.insertOne(order, (r, t) -> {});
@@ -181,12 +180,13 @@ public class Transaction {
     //Transaction 3
     public static void processDelivery(int wid, Integer carrierid) {
         for (int did = 1; did <= 10; did++){
+            System.out.println(did);
 
             FindIterable<Document> orders_curr = Connector.order.find(and(o_w_id.eq(wid), o_d_id.eq(did)));
 
             //type null finds nothing, type String finds everything
             //BasicDBObject carrierNotInt = new BasicDBObject("$not",o_carrier_id.type(BsonType.INT32));
-            Document order = orders_curr.filter(and(o_w_id.eq(wid), o_d_id.eq(did), o_carrier_id.type(BsonType.STRING)))
+            Document order = orders_curr.filter(and(o_w_id.eq(wid), o_d_id.eq(did), o_carrier_id.eqNull()))
             .sort(new BasicDBObject("O_ID", 1))
             .limit(1)
             .first();
