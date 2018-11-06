@@ -404,7 +404,7 @@ public class Transaction {
                             Pair p = oids.get(oloid);
                             if(p.a != itemId && p.b < 0){
                                 p.b = itemId;
-                                System.out.println("C_ID: " + o_c_id.from(Connector.order.find(and(o_w_id.eq(ol_w_id.from(orderO)),ol_d_id.eq(ol_d_id.from(orderO)),o_id.eq(oloid))).first()));
+                                System.out.println("C_ID: " + o_c_id.from(Connector.order.find(and(o_w_id.eq(ol_w_id.from(orderO)),o_d_id.eq(ol_d_id.from(orderO)),o_id.eq(oloid))).first()));
                             }
                         }
                     }
