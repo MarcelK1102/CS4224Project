@@ -199,13 +199,13 @@ public class Transaction {
             int cid = o_c_id.from(order);
 
             //b
-            Connector.order.updateOne(orders_curr.filter(and(o_w_id.eq(wid), o_id.eq(N), o_d_id.eq(did))).first(), o_carrier_id.set(carrierid));
+            Connector.orderAsync.updateOne(orders_curr.filter(and(o_w_id.eq(wid), o_id.eq(N), o_d_id.eq(did))).first(), o_carrier_id.set(carrierid), (d,t) -> {});
 
             //c
             Date date = Date.from(Instant.now());
 
             Bson ol_query = and(ol_w_id.eq(wid), ol_d_id.eq(did), ol_o_id.eq(N));
-            Connector.orderLine.updateMany(ol_query, ol_delivery_d.set(date));
+            Connector.orderLineAsync.updateMany(ol_query, ol_delivery_d.set(date), (d,t)->{});
             //d
             Iterator<Document> toAdd = Connector.orderLine.find(ol_query).iterator();
 
@@ -214,8 +214,8 @@ public class Transaction {
                 B += ol_amount.from(toAdd.next());
             }
 
-            Connector.customer.updateOne(and(c_w_id.eq(wid), c_d_id.eq(did), c_id.eq(cid)),
-            and(c_balance.inc(B), c_delivery_cnt.inc(1)));
+            Connector.customerAsync.updateOne(and(c_w_id.eq(wid), c_d_id.eq(did), c_id.eq(cid)),
+            and(c_balance.inc(B), c_delivery_cnt.inc(1)), (d,t)->{});
         }
     }
     //Transaction 4
