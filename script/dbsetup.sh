@@ -23,6 +23,5 @@ sh.shardCollection('warehouse.warehouse', { W_ID : 1} )
 sh.shardCollection('warehouse.district', { D_W_ID : 1} )
 sh.shardCollection('warehouse.customer', { C_W_ID : 1} )
 sh.shardCollection('warehouse.order', { O_W_ID : 1} )
-sh.shardCollection('warehouse.item', { I_ID : 1} )
 sh.shardCollection('warehouse.stock', { S_W_ID : 1} )
 "
