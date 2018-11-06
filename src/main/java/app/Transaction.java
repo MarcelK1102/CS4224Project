@@ -197,7 +197,6 @@ public class Transaction {
 
             int N = o_id.from(order);
             int cid = o_c_id.from(order);
-            System.out.println("NOT NULL: " + N + ", " + cid );
 
             //b
             Connector.orderAsync.updateOne(orders_curr.filter(and(o_w_id.eq(wid), o_id.eq(N), o_d_id.eq(did))).first(), o_carrier_id.set(carrierid), (d,t) -> {});
