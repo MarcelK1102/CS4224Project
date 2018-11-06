@@ -275,6 +275,8 @@ public class Transaction {
     //Transaction 6
     public static void popularItem(int wid, int did, int L) {
         //P Step 1
+        if(times['I'] == null) times['I'] = new long[3];
+        long start = System.currentTimeMillis();
         MongoCollection<Document> districts = Connector.district;
         Document district = districts.find(and(d_w_id.eq(wid),d_id.eq(did))).first();        
         Integer N = d_next_o_id.from(district);
@@ -283,6 +285,7 @@ public class Transaction {
             
         Iterator<Document> it = S.iterator();
         ArrayList<Integer> orders = new ArrayList<Integer>();
+        times['I'][0] += System.currentTimeMillis() - start;
 
         
         HashMap<Integer, HashSet<Integer>> allItems = new HashMap<>();//orderNumber -> allItems
@@ -293,26 +296,33 @@ public class Transaction {
 
         MongoCollection<Document> orderLine = Connector.orderLine;       
 
-        FindIterable<Document> tmp = orderLine.find(and(ol_d_id.eq(did),ol_w_id.eq(wid)));
+        //FindIterable<Document> tmp = orderLine.find(and(ol_d_id.eq(did),ol_w_id.eq(wid)));
         while(it.hasNext()){
+            start = System.currentTimeMillis();
             Document currentOrder = it.next();
             int O_ID = o_id.from(currentOrder);
-            FindIterable<Document> tmp2 = tmp.filter(ol_o_id.eq(O_ID));
+            FindIterable<Document> tmp2 = orderLine.find(and(ol_d_id.eq(did),ol_w_id.eq(wid),ol_o_id.eq(O_ID)));
             if(tmp2==null||tmp2.first()==null)
                 continue;
+            times['I'][0] += System.currentTimeMillis() - start;
+            start = System.currentTimeMillis();
             Integer max = ol_quantity.from(tmp2.sort(new BasicDBObject("OL_QUANTITY",-1)).first());            
-            FindIterable<Document> Items =  tmp.filter(and(ol_d_id.eq(did),ol_w_id.eq(wid),ol_o_id.eq(O_ID)));
+            FindIterable<Document> Items =  orderLine.find(and(ol_d_id.eq(did),ol_w_id.eq(wid),ol_o_id.eq(O_ID)));
+            times['I'][1] += System.currentTimeMillis() - start;
+            start = System.currentTimeMillis();          
             Iterator<Document> it2 = Items.iterator();
             HashSet<Integer> items = new HashSet<>();
             HashSet<Integer> popItems = new HashSet<>();
-            while(it2.hasNext()){
-                Document Item = it2.next();
+            while(it2.hasNext()){               
+                 Document Item = it2.next();
                 items.add(ol_i_id.from(Item));
                 if(ol_quantity.from(Item)==max){
                     popItemQuantity.put(new Pair(O_ID,ol_i_id.from(Item)),ol_quantity.from(Item));
                     popItems.add(ol_i_id.from(Item));
                 }
             }
+            times['I'][2] += System.currentTimeMillis() - start;
+            start = System.currentTimeMillis();
             allItems.put(O_ID,items);
             popularItems.put(O_ID,popItems);
             orders.add(O_ID);
