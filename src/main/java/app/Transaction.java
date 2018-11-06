@@ -5,6 +5,7 @@ import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Projections.include;
 import static com.mongodb.client.model.Updates.combine;
 
+import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.security.InvalidKeyException;
 import java.time.Instant;
@@ -27,29 +28,30 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 
 public class Transaction {
+    static long times[][] = new long[256][]; 
     static Block<Document> printBlock = new Block<Document>() {
         @Override
         public void apply(final Document document) {
             System.out.println(document.toJson());
         }
     };
-
-    static long newOrderTimes[] = new long[9];  
+ 
     //Transaction 1
     public static void newOrder(int wid, int did, int cid, List<Integer> ids, List<Integer> wids, List<Long> quantities ) {
+        if(times['N'] == null) times['N'] = new long[8];
         Document output = new Document();
         
         long start = System.currentTimeMillis();
         Document warehouse = Connector.warehouse.find(w_id.eq(wid)).first();
-        newOrderTimes[0] += System.currentTimeMillis() - start;
+        times['N'][0] += System.currentTimeMillis() - start;
         
         start = System.currentTimeMillis();
         Document customer = Connector.customer.find(and(c_w_id.eq(wid), c_d_id.eq(did), c_id.eq(cid))).first();
-        newOrderTimes[1] += System.currentTimeMillis() - start;
+        times['N'][1] += System.currentTimeMillis() - start;
         //Processing 1 and 2
         start = System.currentTimeMillis();
         Document district = Connector.district.findOneAndUpdate(and(d_w_id.eq(wid), d_id.eq(did)), d_next_o_id.inc(1));
-        newOrderTimes[2] += System.currentTimeMillis() - start;
+        times['N'][2] += System.currentTimeMillis() - start;
         
         start = System.currentTimeMillis();
         int N = d_next_o_id.from(district).intValue();
@@ -81,7 +83,7 @@ public class Transaction {
         double totalAmount = 0;
         //Processing 5
         List<Document> orderLines = new ArrayList<>();
-        newOrderTimes[3] += System.currentTimeMillis() - start;
+        times['N'][3] += System.currentTimeMillis() - start;
 
         for(int i = 0; i < ids.size(); i++){
             //Processing d
@@ -90,6 +92,7 @@ public class Transaction {
             Connector.stockAsync.findOneAndUpdate(
                 and(s_w_id.eq(wid), s_i_id.eq(ids.get(i))), 
                 combine(
+                    //Processing a + b
                     s_quantity.inc(-quantities.get(i)),
                     s_ytd.inc(quantities.get(i)),
                     s_order_cnt.inc(1),
@@ -104,17 +107,12 @@ public class Transaction {
                         //Output f
                         System.out.println("S_QUANTITY : " + quantity);
                     });
-            newOrderTimes[4] += System.currentTimeMillis() - start;
-
-            //Processing a + b
-            start = System.currentTimeMillis();
-            
-            newOrderTimes[5] += System.currentTimeMillis() - start;
+            times['N'][4] += System.currentTimeMillis() - start;
 
             //Processing e
             start = System.currentTimeMillis();
             Document item = Connector.item.find(i_id.eq(ids.get(i))).first();
-            newOrderTimes[6] += System.currentTimeMillis() - start;
+            times['N'][5] += System.currentTimeMillis() - start;
             double itemAmount = quantities.get(i) + i_price.from(item).doubleValue();
             //Processing f
             totalAmount += itemAmount;
@@ -145,7 +143,7 @@ public class Transaction {
             //Output e
             suboutput.put(ol_amount.s, ol_amount.from(orderLine));
             output.put(""+i, suboutput);
-            newOrderTimes[7] += System.currentTimeMillis() - start;
+            times['N'][6] += System.currentTimeMillis() - start;
         }
         start = System.currentTimeMillis();
         Connector.orderLineAsync.insertMany(orderLines, (r,t) -> {});
@@ -154,7 +152,7 @@ public class Transaction {
         output.put("NUM_ITEMS", ids.size());
         output.put("TOTAL_AMOUNT", totalAmount);
         System.out.println(output.toJson());
-        newOrderTimes[8] += System.currentTimeMillis() - start;
+        times['N'][7] += System.currentTimeMillis() - start;
     }
 
     //Transaction 2
@@ -270,7 +268,6 @@ public class Transaction {
             }
         });
     }
-
 
     //Transaction 6
     public static void popularItem(int wid, int did, int L) {

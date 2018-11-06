@@ -43,7 +43,12 @@ public class Client {
 				counts[c],
 				timeSeconds,
 				timeSeconds > 0.0 ? counts[c]/timeSeconds : 0.0
-			);
+            );
+            if(Transaction.times[c] != null){
+                for(int i = 0; i < Transaction.times[c].length; i++){
+                    System.out.println("Point " + i + " took " + (Transaction.times[c][i] / 1000.0) + " seconds");
+                }
+            }
 		}
 	}
 

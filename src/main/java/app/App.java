@@ -33,9 +33,6 @@ public class App {
         Client.handleInput(args.length < 2 ? -1 : Integer.parseInt(args[1]));
         Client.printStats();
         Connector.close();
-        for(int i = 0; i < Transaction.newOrderTimes.length; i++){
-            System.out.println("Point " + i + " took " + (Transaction.newOrderTimes[i] / 1000.0) + " seconds");
-        }
     }
 
 }
