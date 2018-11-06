@@ -158,20 +158,22 @@ public class Transaction {
     //Transaction 2
     public static void paymentTransaction(int cwid, int cdid, int cid, BigDecimal payment2) {
         Integer payment = payment2.intValue();
-        Document C = Connector.customer.findOneAndUpdate(and(c_id.eq(cid),c_d_id.eq(cdid),c_w_id.eq(cwid)), 
-                                                         combine(c_ytd_payment.inc(payment),c_balance.inc(-payment),c_payment_cnt.inc(1)));
-        Document D = Connector.district.findOneAndUpdate(and(d_id.eq(cdid),d_w_id.eq(cwid)), w_ytd.inc(payment));
-        Document W = Connector.warehouse.findOneAndUpdate(w_id.eq(cwid), d_ytd.inc(payment));  
-        System.out.println("C_W_ID: " + cwid + " C_D_ID: " + cdid + " C_ID: " + cid );
-        System.out.println("Name: " + c_first.from(C) +" " + c_middle.from(C) + " "+ c_last.from(C));
-        System.out.println("Adress: " + c_street_1.from(C) +" "+ c_street_2.from(C) + " "+ c_city.from(C) + " " +
-                                        c_state.from(C) +" " + c_zip.from(C) );
-        System.out.println("Phone: " + c_phone.from(C));
-        System.out.println("Since: " + c_since.from(C));
-        System.out.println("Credit Information: "+ c_credit.from(C) + " Limit: " + c_credit_lim.from(C) + " Discount: " + c_discount.from(C) + " Balance: " + (c_balance.from(C) - payment) );
-        
-        System.out.println("Warehouse: " + w_street_1.from(W) + " " + w_street_2.from(W) +" " + w_city.from(W) +" "+ w_state.from(W) +" "+ w_zip.from(W));
-        System.out.println("District: " + d_street_1.from(D) + " "+ d_street_2.from(D) +" "+ d_city.from(D) +" "+ d_state.from(D) +" "+ d_zip.from(D));
+
+       Connector.customerAsync.findOneAndUpdate(and(c_id.eq(cid),c_d_id.eq(cdid),c_w_id.eq(cwid)), combine(c_ytd_payment.inc(payment),c_balance.inc(-payment),c_payment_cnt.inc(1)),(C,T)->{
+            System.out.println("C_W_ID: " + cwid + " C_D_ID: " + cdid + " C_ID: " + cid );
+            System.out.println("Name: " + c_first.from(C) +" " + c_middle.from(C) + " "+ c_last.from(C));
+            System.out.println("Adress: " + c_street_1.from(C) +" "+ c_street_2.from(C) + " "+ c_city.from(C) + " " +c_state.from(C) +" " + c_zip.from(C) );
+            System.out.println("Phone: " + c_phone.from(C));
+            System.out.println("Since: " + c_since.from(C));
+            System.out.println("Credit Information: "+ c_credit.from(C) + " Limit: " + c_credit_lim.from(C) + " Discount: " + c_discount.from(C) + " Balance: " + (c_balance.from(C) - payment) );
+        });
+        Connector.districtAsync.findOneAndUpdate(and(d_id.eq(cdid),d_w_id.eq(cwid)), w_ytd.inc(payment),(D,T)->{
+            System.out.println("District: " + d_street_1.from(D) + " "+ d_street_2.from(D) +" "+ d_city.from(D) +" "+ d_state.from(D) +" "+ d_zip.from(D));
+        });
+        Connector.warehouseAsync.findOneAndUpdate(w_id.eq(cwid), d_ytd.inc(payment),(W,T)->{
+            System.out.println("Warehouse: " + w_street_1.from(W) + " " + w_street_2.from(W) +" " + w_city.from(W) +" "+ w_state.from(W) +" "+ w_zip.from(W));
+
+        });  
         System.out.println("Payment: " + payment);
 
      }
@@ -197,13 +199,13 @@ public class Transaction {
             int cid = o_c_id.from(order);
 
             //b
-            Connector.order.updateOne(orders_curr.filter(and(o_w_id.eq(wid), o_id.eq(N), o_d_id.eq(did))).first(), o_carrier_id.set(carrierid));
+            Connector.orderAsync.updateOne(orders_curr.filter(and(o_w_id.eq(wid), o_id.eq(N), o_d_id.eq(did))).first(), o_carrier_id.set(carrierid), (d,t) -> {});
 
             //c
             Date date = Date.from(Instant.now());
 
             Bson ol_query = and(ol_w_id.eq(wid), ol_d_id.eq(did), ol_o_id.eq(N));
-            Connector.orderLine.updateMany(ol_query, ol_delivery_d.set(date));
+            Connector.orderLineAsync.updateMany(ol_query, ol_delivery_d.set(date), (d,t)->{});
             //d
             Iterator<Document> toAdd = Connector.orderLine.find(ol_query).iterator();
 
@@ -212,8 +214,8 @@ public class Transaction {
                 B += ol_amount.from(toAdd.next());
             }
 
-            Connector.customer.updateOne(and(c_w_id.eq(wid), c_d_id.eq(did), c_id.eq(cid)),
-            and(c_balance.inc(B), c_delivery_cnt.inc(1)));
+            Connector.customerAsync.updateOne(and(c_w_id.eq(wid), c_d_id.eq(did), c_id.eq(cid)),
+            and(c_balance.inc(B), c_delivery_cnt.inc(1)), (d,t)->{});
         }
     }
     //Transaction 4
