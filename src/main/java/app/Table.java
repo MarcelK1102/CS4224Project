@@ -49,6 +49,10 @@ public class Table{
 			return Filters.eq(s, value);
 		}
 
+		public Bson eqNull(){
+			return Filters.eq(s, null);
+		}
+
 		public Bson lt(T value){
 			return Filters.lt(s, value);
 		}
