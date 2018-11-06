@@ -15,7 +15,6 @@ for i in $(seq 1 $NC); do
 done
 
 wait
-echo "ALL TRANSACTIONS DONE"
 
 for i in $(seq 1 $NC); do
 	ssh $CLUSTER_NAME@$MASTER "cat ~/$i.out | grep '#!#!STATS:''"
@@ -126,4 +125,5 @@ db.stock.aggregate([ {
         } 
     } 
 } ] )' | mongo $MASTER >> database.out
+mv *.out $CONSISTENCY$NC
 #end

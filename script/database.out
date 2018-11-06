@@ -1,3 +1,0 @@
-MongoDB shell version: 2.6.10
-connecting to: 192.168.48.249/test
-2018-11-06T02:08:44.497+0800 Error: couldn't connect to server 192.168.48.249:27017 (192.168.48.249), connection attempt failed at src/mongo/shell/mongo.js:148
