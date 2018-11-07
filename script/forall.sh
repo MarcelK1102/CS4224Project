@@ -20,7 +20,7 @@ echo "DONE INSTALLING"
 
 for i in {0..2}
 do
-    ssh $CLUSTER_NAME@${SHARDS[i]}  "/temp/g/mongoDB/bin/mongod --configsvr --dbpath /temp/g/data/conf --bind_ip ${SHARDS[i]} --replSet conf &" &
+    ssh $CLUSTER_NAME@${SHARDS[i]}  "/temp/g/mongoDB/bin/mongod --configsvr --dbpath /temp/g/data/conf --bind_ip ${SHARDS[i]} --replSet conf & disown" &
 done
 
 sleep 20
@@ -38,7 +38,7 @@ echo "rs.initiate({
 
 for i in {0..4}
 do
-    ssh $CLUSTER_NAME@${SHARDS[i]} "/temp/g/mongoDB/bin/mongod --shardsvr --replSet warehouse --dbpath /temp/g/data/db/ --bind_ip ${SHARDS[i]} &" &
+    ssh $CLUSTER_NAME@${SHARDS[i]} "/temp/g/mongoDB/bin/mongod --shardsvr --replSet warehouse --dbpath /temp/g/data/db/ --bind_ip ${SHARDS[i]} & disown" &
 done
 
 sleep 20
@@ -57,7 +57,7 @@ echo "rs.initiate({
 
 for i in {0..4}
 do
-  ssh $CLUSTER_NAME@${SHARDS[i]} "/temp/g/mongoDB/bin/mongos --configdb conf/${SHARDS[0]}:27019,${SHARDS[1]}:27019,${SHARDS[2]}:27019 --bind_ip ${SHARDS[i]} &" &
+  ssh $CLUSTER_NAME@${SHARDS[i]} "/temp/g/mongoDB/bin/mongos --configdb conf/${SHARDS[0]}:27019,${SHARDS[1]}:27019,${SHARDS[2]}:27019 --bind_ip ${SHARDS[i]} & disown" &
 done
 
 sleep 20
