@@ -1,9 +1,9 @@
 # cs4224-project
 ### Installation
-in order to install cassandra on all the nodes follow these steps:
+in order to install MongoDB on all the nodes follow these steps:
 - go to the script folder 
   - edit forall.sh
-    - Add all nodes to the SHARDS csv list
+    - Add all nodes to the SHARDS list
     - If needed change the path to the project directory
 - Run forall.sh
     - chmod +x forall.sh
