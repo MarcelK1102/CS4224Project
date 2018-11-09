@@ -1,5 +1,5 @@
 #!/bin/bash
-JAR=~/app.jar #path to jar
+JAR='~/app.jar' #path to jar
 MASTER=192.168.48.249
 SEEDS=${MASTER},192.168.48.250,192.168.48.251,192.168.48.252,192.168.48.253 #ip of all nodes
 CLUSTER_NAME=cs4224g
